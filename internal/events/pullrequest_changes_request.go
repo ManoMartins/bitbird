@@ -18,12 +18,12 @@ func NewPullRequestChangesRequest(notifier interfaces.Notifier, messagesStorage 
 }
 
 func (p *PullRequestChangesRequest) Execute(event PullRequestEvent) error {
-	pr, err := p.messagesStorage.GetPullRequestMessage(strconv.Itoa(event.PullRequest.ID))
+	pr, err := p.messagesStorage.GetById(strconv.Itoa(event.PullRequest.ID))
 	if err != nil {
 		return err
 	}
 
-	err = p.notifier.AddChangeRequestEmoji(pr.MessageID)
+	err = p.notifier.AddChangeRequestEmoji(pr.ChannelID, pr.MessageID)
 	if err != nil {
 		return err
 	}

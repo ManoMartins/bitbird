@@ -5,26 +5,26 @@ import (
 	"strconv"
 )
 
-type PullRequestApproved struct {
+type PullRequestRemovedAction struct {
 	notifier        interfaces.Notifier
 	messagesStorage interfaces.PullRequestMessagesInterface
 }
 
-func NewPullRequestApproved(notifier interfaces.Notifier, messagesStorage interfaces.PullRequestMessagesInterface) *PullRequestApproved {
-	return &PullRequestApproved{
+func NewPullRequestRemovedAction(notifier interfaces.Notifier, messagesStorage interfaces.PullRequestMessagesInterface) *PullRequestRemovedAction {
+	return &PullRequestRemovedAction{
 		notifier:        notifier,
 		messagesStorage: messagesStorage,
 	}
 }
 
-func (p *PullRequestApproved) Execute(event PullRequestEvent) error {
+func (p *PullRequestRemovedAction) Execute(event PullRequestEvent) error {
 	pr, err := p.messagesStorage.GetById(strconv.Itoa(event.PullRequest.ID))
 
 	if err != nil {
 		return err
 	}
 
-	err = p.notifier.AddApprovalEmoji(pr.ChannelID, pr.MessageID)
+	err = p.notifier.RemoveEmoji(pr.ChannelID, pr.MessageID)
 	if err != nil {
 		return err
 	}

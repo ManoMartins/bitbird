@@ -7,8 +7,8 @@ import (
 )
 
 type DiscordNotifier struct {
-	Dg        *discordgo.Session
-	ChannelID string
+	dg        *discordgo.Session
+	channelID string
 }
 
 func NewDiscordNotifier() *DiscordNotifier {
@@ -17,13 +17,13 @@ func NewDiscordNotifier() *DiscordNotifier {
 	dg := configs.GetDiscord()
 
 	return &DiscordNotifier{
-		Dg:        dg,
-		ChannelID: channelID,
+		dg:        dg,
+		channelID: channelID,
 	}
 }
 
-func (d *DiscordNotifier) SendNotification(message string) (string, error) {
-	send, err := d.Dg.ChannelMessageSend(d.ChannelID, message)
+func (d *DiscordNotifier) SendNotification(channelID string, message string) (string, error) {
+	send, err := d.dg.ChannelMessageSend(channelID, message)
 
 	if err != nil {
 		return "", err
@@ -32,8 +32,8 @@ func (d *DiscordNotifier) SendNotification(message string) (string, error) {
 	return send.ID, nil
 }
 
-func (d *DiscordNotifier) SendCommentNotification(messageId string, comment string) error {
-	message, err := d.Dg.ChannelMessage(d.ChannelID, messageId)
+func (d *DiscordNotifier) SendCommentNotification(channelID string, messageId string, comment string) error {
+	message, err := d.dg.ChannelMessage(channelID, messageId)
 
 	if err != nil {
 		return err
@@ -42,7 +42,7 @@ func (d *DiscordNotifier) SendCommentNotification(messageId string, comment stri
 	var thread *discordgo.Channel
 
 	if !message.Thread.IsThread() {
-		thread, err = d.Dg.MessageThreadStart(d.ChannelID, messageId, "Novo Topic", 60)
+		thread, err = d.dg.MessageThreadStart(channelID, messageId, "Novo Topic", 60)
 	} else {
 		thread = message.Thread
 	}
@@ -51,7 +51,7 @@ func (d *DiscordNotifier) SendCommentNotification(messageId string, comment stri
 		return err
 	}
 
-	_, err = d.Dg.ChannelMessageSend(thread.ID, comment)
+	_, err = d.dg.ChannelMessageSend(thread.ID, comment)
 	if err != nil {
 		return err
 	}
@@ -59,8 +59,8 @@ func (d *DiscordNotifier) SendCommentNotification(messageId string, comment stri
 	return nil
 }
 
-func (d *DiscordNotifier) AddApprovalEmoji(messageID string) error {
-	err := d.Dg.MessageReactionAdd(d.ChannelID, messageID, "✅")
+func (d *DiscordNotifier) AddApprovalEmoji(channelID string, messageID string) error {
+	err := d.dg.MessageReactionAdd(channelID, messageID, "✅")
 
 	if err != nil {
 		return err
@@ -69,8 +69,18 @@ func (d *DiscordNotifier) AddApprovalEmoji(messageID string) error {
 	return nil
 }
 
-func (d *DiscordNotifier) AddChangeRequestEmoji(messageID string) error {
-	err := d.Dg.MessageReactionAdd(d.ChannelID, messageID, "🔄")
+func (d *DiscordNotifier) AddChangeRequestEmoji(channelID string, messageID string) error {
+	err := d.dg.MessageReactionAdd(channelID, messageID, "🔄")
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DiscordNotifier) RemoveEmoji(channelID string, messageID string) error {
+	err := d.dg.MessageReactionsRemoveAll(channelID, messageID)
 
 	if err != nil {
 		return err

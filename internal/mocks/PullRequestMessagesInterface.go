@@ -12,12 +12,12 @@ type PullRequestMessagesInterface struct {
 	mock.Mock
 }
 
-// FindAllPullRequestMessages provides a mock function with given fields:
-func (_m *PullRequestMessagesInterface) FindAllPullRequestMessages() ([]model.PullRequestMessageModel, error) {
+// FindAll provides a mock function with given fields:
+func (_m *PullRequestMessagesInterface) FindAll() ([]model.PullRequestMessageModel, error) {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
-		panic("no return value specified for FindAllPullRequestMessages")
+		panic("no return value specified for FindAll")
 	}
 
 	var r0 []model.PullRequestMessageModel
@@ -42,12 +42,12 @@ func (_m *PullRequestMessagesInterface) FindAllPullRequestMessages() ([]model.Pu
 	return r0, r1
 }
 
-// GetPullRequestMessage provides a mock function with given fields: prID
-func (_m *PullRequestMessagesInterface) GetPullRequestMessage(prID string) (*model.PullRequestMessageModel, error) {
+// GetById provides a mock function with given fields: prID
+func (_m *PullRequestMessagesInterface) GetById(prID string) (*model.PullRequestMessageModel, error) {
 	ret := _m.Called(prID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetPullRequestMessage")
+		panic("no return value specified for GetById")
 	}
 
 	var r0 *model.PullRequestMessageModel
@@ -72,17 +72,17 @@ func (_m *PullRequestMessagesInterface) GetPullRequestMessage(prID string) (*mod
 	return r0, r1
 }
 
-// SavePullRequestMessage provides a mock function with given fields:
-func (_m *PullRequestMessagesInterface) SavePullRequestMessage() {
+// Save provides a mock function with given fields:
+func (_m *PullRequestMessagesInterface) Save() {
 	_m.Called()
 }
 
-// UpdatePullRequestMessage provides a mock function with given fields: prID, messageID
-func (_m *PullRequestMessagesInterface) UpdatePullRequestMessage(prID string, messageID string) error {
+// Update provides a mock function with given fields: prID, messageID
+func (_m *PullRequestMessagesInterface) Update(prID string, messageID string) error {
 	ret := _m.Called(prID, messageID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for UpdatePullRequestMessage")
+		panic("no return value specified for Update")
 	}
 
 	var r0 error

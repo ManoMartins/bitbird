@@ -18,7 +18,7 @@ func TestPullRequestChangesRequest_Execute_Success(t *testing.T) {
 	event := PullRequestEvent{PullRequest: PullRequest{ID: 123}}
 	prMessage := &model.PullRequestMessageModel{PrID: "123", MessageID: "message-id"}
 
-	messagesStorage.On("GetPullRequestMessage", "123").Return(prMessage, nil)
+	messagesStorage.On("GetById", "123").Return(prMessage, nil)
 	notifier.On("AddChangeRequestEmoji", "message-id").Return(nil)
 
 	sut := NewPullRequestChangesRequest(notifier, messagesStorage)
@@ -41,7 +41,7 @@ func TestPullRequestChangesRequest_Execute_GetPullRequestMessageError(t *testing
 
 	event := PullRequestEvent{PullRequest: PullRequest{ID: 123}}
 
-	messagesStorage.On("GetPullRequestMessage", "123").Return(nil, expectedError)
+	messagesStorage.On("GetById", "123").Return(nil, expectedError)
 
 	sut := NewPullRequestChangesRequest(notifier, messagesStorage)
 
@@ -65,7 +65,7 @@ func TestPullRequestChangesRequest_Execute_AddChangeRequestEmojiError(t *testing
 	event := PullRequestEvent{PullRequest: PullRequest{ID: 123}}
 	prMessage := &model.PullRequestMessageModel{PrID: "123", MessageID: "message-id"}
 
-	messagesStorage.On("GetPullRequestMessage", "123").Return(prMessage, nil)
+	messagesStorage.On("GetById", "123").Return(prMessage, nil)
 	notifier.On("AddChangeRequestEmoji", "message-id").Return(expectedError)
 
 	sut := NewPullRequestChangesRequest(notifier, messagesStorage)

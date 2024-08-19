@@ -18,7 +18,7 @@ func NewPullRequestMessages() *PullRequestMessages {
 	return &PullRequestMessages{}
 }
 
-func (p *PullRequestMessages) GetPullRequestMessage(prID string) (*model.PullRequestMessageModel, error) {
+func (p *PullRequestMessages) GetById(prID string) (*model.PullRequestMessageModel, error) {
 	for _, message := range pullRequestMessages {
 		if message.PrID == prID {
 			return &message, nil
@@ -28,7 +28,7 @@ func (p *PullRequestMessages) GetPullRequestMessage(prID string) (*model.PullReq
 	return nil, fmt.Errorf("PR with ID %s not found", prID)
 }
 
-func (p *PullRequestMessages) FindAllPullRequestMessages() ([]model.PullRequestMessageModel, error) {
+func (p *PullRequestMessages) FindAll() ([]model.PullRequestMessageModel, error) {
 	file, err := os.Open("pull_request_messages.json")
 	if err != nil {
 		return nil, fmt.Errorf("No existing mappings file found, creating a new one.")
@@ -44,7 +44,7 @@ func (p *PullRequestMessages) FindAllPullRequestMessages() ([]model.PullRequestM
 	return pullRequestMessages, nil
 }
 
-func (p *PullRequestMessages) SavePullRequestMessage() {
+func (p *PullRequestMessages) Save() {
 	file, err := os.Create("pull_request_messages.json")
 	if err != nil {
 		log.Fatalf("Error creating JSON file: %v", err)
@@ -59,17 +59,23 @@ func (p *PullRequestMessages) SavePullRequestMessage() {
 	}
 }
 
-func (p *PullRequestMessages) UpdatePullRequestMessage(prID string, messageID string) error {
+func (p *PullRequestMessages) Create(prID string, channelID string, messageID string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PullRequestMessages) Update(prID string, channelID string, messageID string) error {
 	for i, message := range pullRequestMessages {
 		if message.PrID == prID {
+			pullRequestMessages[i].ChannelID = channelID
 			pullRequestMessages[i].MessageID = messageID
-			p.SavePullRequestMessage()
+			p.Save()
 			return nil
 		}
 	}
 
-	pullRequestMessages = append(pullRequestMessages, model.PullRequestMessageModel{PrID: prID, MessageID: messageID})
-	p.SavePullRequestMessage()
+	pullRequestMessages = append(pullRequestMessages, model.PullRequestMessageModel{PrID: prID, ChannelID: channelID, MessageID: messageID})
+	p.Save()
 
 	return nil
 }
