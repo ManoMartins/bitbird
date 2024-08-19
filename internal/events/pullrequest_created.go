@@ -3,6 +3,7 @@ package events
 import (
 	"fmt"
 	"github.com/manomartins/bitbird/internal/interfaces"
+	"os"
 	"strconv"
 )
 
@@ -52,12 +53,13 @@ func (p *PullRequestCreated) Execute(event PullRequestEvent) error {
 			Link:        event.PullRequest.Links.HTML.Href,
 		})
 
-	messageID, err := p.notifier.SendNotification(message)
+	channelID := os.Getenv("DISCORD_CHANNEL_ID_FOR_PR")
+	messageID, err := p.notifier.SendNotification(channelID, message)
 	if err != nil {
 		return err
 	}
 
-	err = p.messagesStorage.UpdatePullRequestMessage(strconv.Itoa(event.PullRequest.ID), messageID)
+	err = p.messagesStorage.Create(strconv.Itoa(event.PullRequest.ID), channelID, messageID)
 	if err != nil {
 		return err
 	}

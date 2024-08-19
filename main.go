@@ -40,12 +40,15 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	eventPullRequestApproved := events.NewPullRequestApproved(notifier, messagesStorage)
 	eventPullRequestChangesRequest := events.NewPullRequestChangesRequest(notifier, messagesStorage)
 	eventPullRequestCommentCreated := events.NewPullRequestCommentCreated(notifier, messagesStorage)
+	eventPullRequestRemovedAction := events.NewPullRequestRemovedAction(notifier, messagesStorage)
 
 	eventHandlers := map[string]eventFunc{
 		"pullrequest:created":                 eventPullRequestCreated.Execute,
 		"pullrequest:approved":                eventPullRequestApproved.Execute,
 		"pullrequest:changes_request_created": eventPullRequestChangesRequest.Execute,
 		"pullrequest:comment_created":         eventPullRequestCommentCreated.Execute,
+		"pullrequest:approved_removed":        eventPullRequestRemovedAction.Execute,
+		"pullrequest:changes_request_removed": eventPullRequestRemovedAction.Execute,
 	}
 
 	if handler, exists := eventHandlers[eventKey]; exists {

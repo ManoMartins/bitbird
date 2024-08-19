@@ -18,12 +18,12 @@ func NewPullRequestCommentCreated(notifier interfaces.Notifier, messagesStorage 
 }
 
 func (p *PullRequestCommentCreated) Execute(event PullRequestEvent) error {
-	pr, err := p.messagesStorage.GetPullRequestMessage(strconv.Itoa(event.PullRequest.ID))
+	pr, err := p.messagesStorage.GetById(strconv.Itoa(event.PullRequest.ID))
 	if err != nil {
 		return err
 	}
 
-	err = p.notifier.SendCommentNotification(pr.MessageID, event.Comment.Content.Raw)
+	err = p.notifier.SendCommentNotification(pr.ChannelID, pr.MessageID, event.Comment.Content.Raw)
 	if err != nil {
 		return err
 	}

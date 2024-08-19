@@ -22,7 +22,7 @@ func TestPullRequestCommentCreated_Execute_Success(t *testing.T) {
 	}
 	prMessage := &model.PullRequestMessageModel{PrID: "123", MessageID: "message-id"}
 
-	messagesStorageMock.On("GetPullRequestMessage", "123").Return(prMessage, nil)
+	messagesStorageMock.On("GetById", "123").Return(prMessage, nil)
 	notifier.On("SendCommentNotification", "message-id", "This is a test comment").Return(nil)
 
 	sut := NewPullRequestCommentCreated(notifier, messagesStorageMock)
@@ -46,7 +46,7 @@ func TestPullRequestCommentCreated_Execute_GetPullRequestMessageError(t *testing
 
 	event := PullRequestEvent{PullRequest: PullRequest{ID: 123}}
 
-	messagesStorage.On("GetPullRequestMessage", "123").Return(nil, expectedError)
+	messagesStorage.On("GetById", "123").Return(nil, expectedError)
 
 	sut := NewPullRequestCommentCreated(notifier, messagesStorage)
 
@@ -73,7 +73,7 @@ func TestPullRequestCommentCreated_Execute_SendCommentNotificationError(t *testi
 	}
 	prMessage := &model.PullRequestMessageModel{PrID: "123", MessageID: "message-id"}
 
-	messagesStorage.On("GetPullRequestMessage", "123").Return(prMessage, nil)
+	messagesStorage.On("GetById", "123").Return(prMessage, nil)
 	notifier.On("SendCommentNotification", "message-id", "This is a test comment").Return(expectedError)
 
 	sut := NewPullRequestCommentCreated(notifier, messagesStorage)

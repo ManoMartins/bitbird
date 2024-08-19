@@ -20,7 +20,7 @@ func NewPullRequestMessagesMongo() *PullRequestMessagesMongo {
 	}
 }
 
-func (p *PullRequestMessagesMongo) GetPullRequestMessage(prID string) (*model.PullRequestMessageModel, error) {
+func (p *PullRequestMessagesMongo) GetById(prID string) (*model.PullRequestMessageModel, error) {
 	var pr model.PullRequestMessageModel
 
 	err := p.collection.FindOne(context.TODO(),
@@ -35,7 +35,7 @@ func (p *PullRequestMessagesMongo) GetPullRequestMessage(prID string) (*model.Pu
 	return &pr, nil
 }
 
-func (p *PullRequestMessagesMongo) FindAllPullRequestMessages() ([]model.PullRequestMessageModel, error) {
+func (p *PullRequestMessagesMongo) FindAll() ([]model.PullRequestMessageModel, error) {
 	var prs []model.PullRequestMessageModel
 
 	cursor, err := p.collection.Find(context.TODO(), nil)
@@ -51,16 +51,34 @@ func (p *PullRequestMessagesMongo) FindAllPullRequestMessages() ([]model.PullReq
 	return prs, nil
 }
 
-func (p *PullRequestMessagesMongo) SavePullRequestMessage() {
+func (p *PullRequestMessagesMongo) Save() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (p *PullRequestMessagesMongo) UpdatePullRequestMessage(prID string, messageID string) error {
+func (p *PullRequestMessagesMongo) Create(prID string, channelID string, messageID string) error {
 	_, err := p.collection.InsertOne(
 		context.TODO(),
 		model.PullRequestMessageModel{
 			PrID:      prID,
+			ChannelID: channelID,
+			MessageID: messageID,
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *PullRequestMessagesMongo) Update(prID string, channelID string, messageID string) error {
+	_, err := p.collection.InsertOne(
+		context.TODO(),
+		model.PullRequestMessageModel{
+			PrID:      prID,
+			ChannelID: channelID,
 			MessageID: messageID,
 		},
 	)

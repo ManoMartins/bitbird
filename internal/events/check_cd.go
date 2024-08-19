@@ -6,6 +6,7 @@ import (
 	"github.com/manomartins/bitbird/internal/interfaces"
 	"github.com/manomartins/bitbird/internal/model"
 	"github.com/manomartins/bitbird/internal/work"
+	"os"
 	"regexp"
 	"sync"
 )
@@ -54,13 +55,15 @@ func (c *CheckCD) Execute() error {
 			hash,
 		)
 
-		messageID, err := c.notifier.SendNotification(message)
+		channelID := os.Getenv("DISCORD_CHANNEL_ID_FOR_CD")
+		messageID, err := c.notifier.SendNotification(channelID, message)
 		if err != nil {
 			return err
 		}
 
 		err = c.deploymentQueueStorage.Create(model.DeploymentQueueModel{
 			CardKey:    issue.Key,
+			ChannelID:  channelID,
 			MessageID:  messageID,
 			CommitHash: hash,
 		})

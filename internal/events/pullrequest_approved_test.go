@@ -20,10 +20,10 @@ func TestPullRequestApproved_Execute_Success(t *testing.T) {
 	expectedMessageID := "1"
 	expectedPrMessage := &model.PullRequestMessageModel{PrID: "1", MessageID: "1"}
 
-	messagesStorage.On("GetPullRequestMessage", expectedPrID).Return(expectedPrMessage, nil)
+	messagesStorage.On("GetById", expectedPrID).Return(expectedPrMessage, nil)
 	notifier.On("AddApprovalEmoji", expectedMessageID).Return(nil)
 
-	// Create the PullRequestApproved instance
+	// Create the PullRequestRemovedAction instance
 	prApproved := NewPullRequestApproved(notifier, messagesStorage)
 
 	// Define the event to test
@@ -40,7 +40,7 @@ func TestPullRequestApproved_Execute_Success(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Assert that the expected methods were called
-	messagesStorage.AssertCalled(t, "GetPullRequestMessage", expectedPrID)
+	messagesStorage.AssertCalled(t, "GetById", expectedPrID)
 	notifier.AssertCalled(t, "AddApprovalEmoji", expectedMessageID)
 }
 
@@ -53,9 +53,9 @@ func TestPullRequestApproved_Execute_GetMessageError(t *testing.T) {
 	expectedPrID := "1"
 	expectedError := errors.New("error getting PR message")
 
-	messagesStorage.On("GetPullRequestMessage", expectedPrID).Return(nil, expectedError)
+	messagesStorage.On("GetById", expectedPrID).Return(nil, expectedError)
 
-	// Create the PullRequestApproved instance
+	// Create the PullRequestRemovedAction instance
 	prApproved := NewPullRequestApproved(notifier, messagesStorage)
 
 	// Define the event to test
@@ -86,10 +86,10 @@ func TestPullRequestApproved_Execute_AddEmojiError(t *testing.T) {
 	expectedPrMessage := &model.PullRequestMessageModel{PrID: "1", MessageID: "1"}
 	expectedError := errors.New("error adding emoji")
 
-	messagesStorage.On("GetPullRequestMessage", expectedPrID).Return(expectedPrMessage, nil)
+	messagesStorage.On("GetById", expectedPrID).Return(expectedPrMessage, nil)
 	notifier.On("AddApprovalEmoji", expectedMessageID).Return(expectedError)
 
-	// Create the PullRequestApproved instance
+	// Create the PullRequestRemovedAction instance
 	prApproved := NewPullRequestApproved(notifier, messagesStorage)
 
 	// Define the event to test
@@ -106,6 +106,6 @@ func TestPullRequestApproved_Execute_AddEmojiError(t *testing.T) {
 	assert.Equal(t, expectedError, err)
 
 	// Assert that the expected methods were called
-	messagesStorage.AssertCalled(t, "GetPullRequestMessage", expectedPrID)
+	messagesStorage.AssertCalled(t, "GetById", expectedPrID)
 	notifier.AssertCalled(t, "AddApprovalEmoji", expectedMessageID)
 }

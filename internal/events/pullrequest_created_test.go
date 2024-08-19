@@ -26,10 +26,10 @@ func TestPullRequestCreated_Execute_Success(t *testing.T) {
 		"**Link do PR:** [Abrir PR](https://example.com/pr/123)\n\n" +
 		"*Nenhum revisor atribuído.*\n"
 
-	messagesStorage.On("UpdatePullRequestMessage", expectedPrID, expectedMessageID).Return(nil)
+	messagesStorage.On("Update", expectedPrID, expectedMessageID).Return(nil)
 	notifier.On("SendNotification", expectedMessage).Return(expectedMessageID, nil)
 
-	// Create the PullRequestApproved instance
+	// Create the PullRequestRemovedAction instance
 	prCreated := NewPullRequestCreated(notifier, messagesStorage)
 
 	// Define the event to test
@@ -52,7 +52,7 @@ func TestPullRequestCreated_Execute_Success(t *testing.T) {
 	assert.NoError(t, err)
 
 	notifier.AssertNumberOfCalls(t, "SendNotification", 1)
-	messagesStorage.AssertCalled(t, "UpdatePullRequestMessage", expectedPrID, expectedMessageID)
+	messagesStorage.AssertCalled(t, "Update", expectedPrID, expectedMessageID)
 }
 
 func TestPullRequestCreated_Execute_SuccessWithReviewers(t *testing.T) {
@@ -73,10 +73,10 @@ func TestPullRequestCreated_Execute_SuccessWithReviewers(t *testing.T) {
 		"**Link do PR:** [Abrir PR](https://example.com/pr/123)\n\n" +
 		"**📝 Revisores:**\n- tassyo monteiro\n- manoel martins\n"
 
-	messagesStorage.On("UpdatePullRequestMessage", expectedPrID, expectedMessageID).Return(nil)
+	messagesStorage.On("Update", expectedPrID, expectedMessageID).Return(nil)
 	notifier.On("SendNotification", expectedMessage).Return(expectedMessageID, nil)
 
-	// Create the PullRequestApproved instance
+	// Create the PullRequestRemovedAction instance
 	prCreated := NewPullRequestCreated(notifier, messagesStorage)
 
 	// Define the event to test
@@ -121,7 +121,7 @@ func TestPullRequestCreated_Execute_SendNotificationError(t *testing.T) {
 
 	notifier.On("SendNotification", mock.Anything).Return("", expectedError)
 
-	// Create the PullRequestApproved instance
+	// Create the PullRequestRemovedAction instance
 	prCreated := NewPullRequestCreated(notifier, messagesStorage)
 
 	// Define the event to test
@@ -144,7 +144,7 @@ func TestPullRequestCreated_Execute_SendNotificationError(t *testing.T) {
 	assert.Equal(t, expectedError, err)
 
 	notifier.AssertExpectations(t)
-	messagesStorage.AssertNotCalled(t, "UpdatePullRequestMessage", mock.Anything)
+	messagesStorage.AssertNotCalled(t, "Update", mock.Anything)
 }
 
 func TestPullRequestCreated_Execute_UpdatePullRequestMessageError(t *testing.T) {
@@ -158,9 +158,9 @@ func TestPullRequestCreated_Execute_UpdatePullRequestMessageError(t *testing.T) 
 	expectedError := errors.New("error to update")
 
 	notifier.On("SendNotification", mock.Anything).Return(expectedMessageID, nil)
-	messagesStorage.On("UpdatePullRequestMessage", expectedPrID, expectedMessageID).Return(expectedError)
+	messagesStorage.On("Update", expectedPrID, expectedMessageID).Return(expectedError)
 
-	// Create the PullRequestApproved instance
+	// Create the PullRequestRemovedAction instance
 	prCreated := NewPullRequestCreated(notifier, messagesStorage)
 
 	// Define the event to test
