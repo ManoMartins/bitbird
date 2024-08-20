@@ -33,10 +33,8 @@ type Destination struct {
 }
 
 type Reviewer struct {
-	Approved bool `json:"approved"`
-	User     struct {
-		DisplayName string `json:"display_name"`
-	} `json:"user"`
+	Approved    bool   `json:"approved"`
+	DisplayName string `json:"display_name"`
 }
 
 type PullRequest struct {

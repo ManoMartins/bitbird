@@ -5,6 +5,7 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/manomartins/bitbird/internal/interfaces"
 	"github.com/manomartins/bitbird/internal/model"
+	"github.com/manomartins/bitbird/internal/utils"
 	"github.com/manomartins/bitbird/internal/work"
 	"os"
 	"regexp"
@@ -19,6 +20,11 @@ type CheckCD struct {
 	deploymentQueueStorage interfaces.DeploymentQueueInterface
 }
 
+type IssueChan struct {
+	Issue    *jira.Issue
+	CodeBase work.CodeBase
+}
+
 func NewCheckCD(notifier interfaces.Notifier, issueService interfaces.IssueService, deploymentQueueStorage interfaces.DeploymentQueueInterface) *CheckCD {
 	return &CheckCD{
 		issueService:           issueService,
@@ -28,7 +34,7 @@ func NewCheckCD(notifier interfaces.Notifier, issueService interfaces.IssueServi
 }
 
 func (c *CheckCD) Execute() error {
-	issues := make(chan *jira.Issue, 3)
+	issues := make(chan *IssueChan, 3)
 
 	wg.Add(3)
 
@@ -44,14 +50,15 @@ func (c *CheckCD) Execute() error {
 			continue
 		}
 
-		hash, err := c.extractHash(issue.Fields.Summary)
+		hash, err := c.extractHash(issue.Issue.Fields.Summary)
 		if err != nil {
 			return err
 		}
 
 		message := c.generateDeployNotification(
-			issue.Key,
-			issue.Fields.Assignee.DisplayName,
+			issue.Issue.Key,
+			issue.Issue.Fields.Assignee.DisplayName,
+			issue.CodeBase,
 			hash,
 		)
 
@@ -62,7 +69,7 @@ func (c *CheckCD) Execute() error {
 		}
 
 		err = c.deploymentQueueStorage.Create(model.DeploymentQueueModel{
-			CardKey:    issue.Key,
+			CardKey:    issue.Issue.Key,
 			ChannelID:  channelID,
 			MessageID:  messageID,
 			CommitHash: hash,
@@ -75,7 +82,7 @@ func (c *CheckCD) Execute() error {
 	return nil
 }
 
-func (c *CheckCD) getFirstIssueByCodeBase(base work.CodeBase, issueChan chan *jira.Issue) {
+func (c *CheckCD) getFirstIssueByCodeBase(base work.CodeBase, issueChan chan *IssueChan) {
 	defer wg.Done()
 	issue := c.issueService.GetFirstIssueByCodeBase(base)
 
@@ -95,7 +102,11 @@ func (c *CheckCD) getFirstIssueByCodeBase(base work.CodeBase, issueChan chan *ji
 		return
 	}
 
-	issueChan <- issue
+	issueChan <- &IssueChan{
+		Issue:    issue,
+		CodeBase: base,
+	}
+
 }
 
 func (c *CheckCD) extractHash(deploymentString string) (string, error) {
@@ -112,10 +123,16 @@ func (c *CheckCD) extractHash(deploymentString string) (string, error) {
 	return hash, nil
 }
 
-func (c *CheckCD) generateDeployNotification(cardKey, author, hash string) string {
+func (c *CheckCD) generateDeployNotification(cardKey string, author string, base work.CodeBase, hash string) string {
+	authorMention, ok := DiscordUsers[utils.ToSnakeCase(author)]
+	if !ok {
+		authorMention = author
+	}
+
 	message := "🔔 **Deploy em Homologação**\n\n"
 	message += fmt.Sprintf("**Chave do Card:** %s\n", cardKey)
-	message += fmt.Sprintf("**Autor:** %s\n", author)
+	message += fmt.Sprintf("**Autor:** %s\n", authorMention)
+	message += fmt.Sprintf("**Repositorio:** %s\n", base)
 	message += fmt.Sprintf("**Hash do Commit:** %s\n\n", hash)
 	message += fmt.Sprintf("📋 **Comando Git:**\n")
 	message += fmt.Sprintf("```bash\n")

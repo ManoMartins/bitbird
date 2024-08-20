@@ -3,13 +3,32 @@ package events
 import (
 	"fmt"
 	"github.com/manomartins/bitbird/internal/interfaces"
+	"github.com/manomartins/bitbird/internal/utils"
 	"os"
 	"strconv"
 )
 
-var discordUsers = map[string]string{
-	"manoel_martins":  "<@667184274428002345>",
-	"tassyo_monteiro": "<@905438526055800874>",
+var DiscordUsers = map[string]string{
+	"alexandre_valim":                "<@1258102843798323404>",
+	"david_almeida_santos":           "<@550057532631154719>",
+	"gabriel_alves_de_lima":          "<@310979218320261120>",
+	"jean_paes_rabello":              "<@260392808723120138>",
+	"joao_victor_pereira_dos_santos": "<@594647301411176451>",
+	"liziane_tamm":                   "<@714928138777526313>",
+	"manoel_martins":                 "<@667184274428002345>",
+	"matheus_de_paula_cordeiro":      "<@1055305522720555069>",
+	"marcio_d_carvalho":              "<@642135148334415882>",
+	"tassyo_monteiro":                "<@905438526055800874>",
+	"william_rodrigues":              "<@960526439927672902>",
+	"ana_alice_honorio":              "<@821798354152456313>",
+	"luan_s_calais":                  "<@610988261665538059>",
+	"samantha_vale":                  "<@819642515925237790>",
+	"luiz_amorim":                    "<@443866985328017408>",
+
+	//"henrique_siqueira_cheim": "<@>",
+	//"guilherme_borba":         "<@>",
+	//"rafael_costa":            "<@>",
+	//"islanilton_rodrigues":    "<@>",
 }
 
 type FormatMessageData struct {
@@ -37,8 +56,8 @@ func NewPullRequestCreated(notifier interfaces.Notifier, messagesStorage interfa
 
 func (p *PullRequestCreated) Execute(event PullRequestEvent) error {
 	var prReviewersName []string
-	for _, review := range event.PullRequest.Reviewers {
-		prReviewersName = append(prReviewersName, review.User.DisplayName)
+	for _, reviewer := range event.PullRequest.Reviewers {
+		prReviewersName = append(prReviewersName, reviewer.DisplayName)
 	}
 
 	message := p.formatMessage(
@@ -47,7 +66,7 @@ func (p *PullRequestCreated) Execute(event PullRequestEvent) error {
 			Title:       event.PullRequest.Title,
 			State:       event.PullRequest.State,
 			Author:      event.Actor.DisplayName,
-			Destination: event.PullRequest.Source.Branch.Name,
+			Destination: event.PullRequest.Destination.Branch.Name,
 			Reviewers:   prReviewersName,
 			RepoName:    event.Repository.Name,
 			Link:        event.PullRequest.Links.HTML.Href,
@@ -68,7 +87,7 @@ func (p *PullRequestCreated) Execute(event PullRequestEvent) error {
 }
 
 func (p *PullRequestCreated) formatMessage(pr FormatMessageData) string {
-	authorMention, ok := discordUsers[pr.Author]
+	authorMention, ok := DiscordUsers[utils.ToSnakeCase(pr.Author)]
 	if !ok {
 		authorMention = pr.Author // Caso não haja mapeamento, use o nome do autor
 	}
@@ -83,10 +102,10 @@ func (p *PullRequestCreated) formatMessage(pr FormatMessageData) string {
 
 	if len(pr.Reviewers) > 0 {
 		message += "\n**📝 Revisores:**\n"
-		for _, review := range pr.Reviewers {
-			reviewerMention, ok := discordUsers[review]
+		for _, reviewer := range pr.Reviewers {
+			reviewerMention, ok := DiscordUsers[utils.ToSnakeCase(reviewer)]
 			if !ok {
-				reviewerMention = review // Caso não haja mapeamento
+				reviewerMention = reviewer // Caso não haja mapeamento
 			}
 			message += fmt.Sprintf("- %s\n", reviewerMention)
 		}

@@ -47,7 +47,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 		"pullrequest:approved":                eventPullRequestApproved.Execute,
 		"pullrequest:changes_request_created": eventPullRequestChangesRequest.Execute,
 		"pullrequest:comment_created":         eventPullRequestCommentCreated.Execute,
-		"pullrequest:approved_removed":        eventPullRequestRemovedAction.Execute,
+		"pullrequest:unapproved":              eventPullRequestRemovedAction.Execute,
 		"pullrequest:changes_request_removed": eventPullRequestRemovedAction.Execute,
 	}
 
