@@ -1,0 +1,8 @@
+[build]
+    cmd = "go build -o main ."
+    bin = "main"
+    include = ["*.go"]
+    exclude = ["assets"]
+
+[log]
+    time = true

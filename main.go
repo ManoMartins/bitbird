@@ -84,8 +84,8 @@ func main() {
 	notifier = chat_notify.NewDiscordNotifier()
 
 	c := cron.New()
-	c.AddFunc("*/60 * * * *", func() {
-		fmt.Println("Check CD")
+	c.AddFunc("*/30 7-21 * * *", func() {
+		log.Println("Checking deployment queue...")
 		jiraWork := work.NewJira()
 		deploymentQueue := storage.NewDeploymentQueueMongo()
 		checkCD := events.NewCheckCD(notifier, jiraWork, deploymentQueue)
