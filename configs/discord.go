@@ -2,7 +2,6 @@ package configs
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
 )
@@ -10,13 +9,16 @@ import (
 var dg *discordgo.Session
 
 func ConnectDiscord() {
-	err := godotenv.Load(".env")
-
 	token := os.Getenv("DISCORD_BOT_TOKEN")
 
 	dgConnect, err := discordgo.New("Bot " + token)
 	if err != nil {
 		log.Fatalf("Error: %s", err)
+	}
+
+	err = dgConnect.Open()
+	if err != nil {
+		log.Fatalf("Error opening connection: %v", err)
 	}
 
 	log.Println("Connected to Discord...")
