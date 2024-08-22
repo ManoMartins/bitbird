@@ -56,9 +56,9 @@ func (p *PullRequestMessagesMongo) Save() {
 	panic("implement me")
 }
 
-func (p *PullRequestMessagesMongo) Create(prID string, channelID string, messageID string) error {
+func (p *PullRequestMessagesMongo) Create(ctx context.Context, prID string, channelID string, messageID string) error {
 	_, err := p.collection.InsertOne(
-		context.TODO(),
+		ctx,
 		model.PullRequestMessageModel{
 			PrID:      prID,
 			ChannelID: channelID,

@@ -1,6 +1,7 @@
 package events
 
 import (
+	"context"
 	"github.com/manomartins/bitbird/internal/interfaces"
 	"strconv"
 )
@@ -17,7 +18,7 @@ func NewPullRequestCommentCreated(notifier interfaces.Notifier, messagesStorage 
 	}
 }
 
-func (p *PullRequestCommentCreated) Execute(event PullRequestEvent) error {
+func (p *PullRequestCommentCreated) Execute(ctx context.Context, event PullRequestEvent) error {
 	pr, err := p.messagesStorage.GetById(strconv.Itoa(event.PullRequest.ID))
 	if err != nil {
 		return err

@@ -1,11 +1,17 @@
 package events
 
 import (
+	"context"
 	"fmt"
 	"github.com/manomartins/bitbird/internal/interfaces"
 	"github.com/manomartins/bitbird/internal/utils"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var DiscordUsers = map[string]string{
@@ -31,6 +37,15 @@ var DiscordUsers = map[string]string{
 	//"islanilton_rodrigues":    "<@>",
 }
 
+const name = "github.com/manomartins/bitbird"
+
+var (
+	tracer = otel.Tracer(name)
+	meter  = otel.Meter(name)
+	//logger  = otelslog.NewLogger(name)
+	prCounter metric.Int64Counter
+)
+
 type FormatMessageData struct {
 	ID          int
 	Title       string
@@ -47,6 +62,18 @@ type PullRequestCreated struct {
 	messagesStorage interfaces.PullRequestMessagesInterface
 }
 
+func init() {
+	var err error
+	prCounter, err = meter.Int64Counter(
+		"pull_request_created",
+		metric.WithDescription("The number of pull request created"),
+		metric.WithUnit("{call}"),
+	)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func NewPullRequestCreated(notifier interfaces.Notifier, messagesStorage interfaces.PullRequestMessagesInterface) *PullRequestCreated {
 	return &PullRequestCreated{
 		notifier:        notifier,
@@ -54,11 +81,29 @@ func NewPullRequestCreated(notifier interfaces.Notifier, messagesStorage interfa
 	}
 }
 
-func (p *PullRequestCreated) Execute(event PullRequestEvent) error {
+func (p *PullRequestCreated) Execute(ctx context.Context, event PullRequestEvent) error {
+	prCounter.Add(ctx, 1)
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("pull_request_created.event")
+
 	var prReviewersName []string
 	for _, reviewer := range event.PullRequest.Reviewers {
 		prReviewersName = append(prReviewersName, reviewer.DisplayName)
 	}
+
+	span.SetAttributes(
+		attribute.Int("pull_request.id", event.PullRequest.ID),
+		attribute.String("pull_request.author", event.Actor.DisplayName),
+	)
+
+	if len(event.PullRequest.Reviewers) > 0 {
+		span.SetAttributes(
+			attribute.String("pull_request.reviewers", strings.Join(prReviewersName, ", ")),
+		)
+	}
+
+	ctx, spanSendMessage := tracer.Start(ctx, "pull_request_created.send_message")
+	defer spanSendMessage.End()
 
 	message := p.formatMessage(
 		FormatMessageData{
@@ -78,7 +123,7 @@ func (p *PullRequestCreated) Execute(event PullRequestEvent) error {
 		return err
 	}
 
-	err = p.messagesStorage.Create(strconv.Itoa(event.PullRequest.ID), channelID, messageID)
+	err = p.messagesStorage.Create(ctx, strconv.Itoa(event.PullRequest.ID), channelID, messageID)
 	if err != nil {
 		return err
 	}

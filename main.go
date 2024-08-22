@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/manomartins/bitbird/configs"
@@ -14,11 +16,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 var notifier interfaces.Notifier
 
-type eventFunc func(event events.PullRequestEvent) error
+type eventFunc func(ctx context.Context, event events.PullRequestEvent) error
 
 func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
@@ -52,7 +56,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if handler, exists := eventHandlers[eventKey]; exists {
-		err = handler(event)
+		err = handler(r.Context(), event)
 
 		fmt.Println("Error handling event", err)
 
@@ -75,6 +79,18 @@ func init() {
 }
 
 func main() {
+	ctx := context.Background()
+
+	otelShutdown, err := setupOTelSDK(ctx)
+	if err != nil {
+		return
+	}
+
+	// Handle shutdown properly so nothing leaks.
+	defer func() {
+		err = errors.Join(err, otelShutdown(context.Background()))
+	}()
+
 	storage.ConnectMongoDB()
 	defer storage.CloseMongoDB()
 
@@ -97,8 +113,12 @@ func main() {
 	})
 	c.Start()
 
-	http.HandleFunc("/", handleWebhook)
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("OK")) })
+	otelHandler := otelhttp.NewHandler(http.HandlerFunc(handleWebhook), "webhooks")
+
+	http.Handle("/", otelHandler)
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+	})
 
 	log.Println("Listening on :8080...")
 

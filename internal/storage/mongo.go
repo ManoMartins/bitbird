@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 )
 
 var MongoClient *mongo.Client
@@ -19,6 +21,7 @@ func ConnectMongoDB() *mongo.Client {
 	// Use the SetServerAPIOptions() method to set the version of the Stable API on the client
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(fmt.Sprintf("mongodb+srv://%s:%s@bitbird.hxfijor.mongodb.net/?retryWrites=true&w=majority&appName=bitbird", mongoUser, mongoPassword)).SetServerAPIOptions(serverAPI)
+	opts.Monitor = otelmongo.NewMonitor()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
