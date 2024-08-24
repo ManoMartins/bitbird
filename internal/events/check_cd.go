@@ -59,7 +59,6 @@ func (c *CheckCD) Execute(ctx context.Context) error {
 
 		message := c.generateDeployNotification(
 			issue.Issue.Key,
-			issue.Issue.Fields.Assignee.DisplayName,
 			issue.CodeBase,
 			hash,
 		)
@@ -71,12 +70,18 @@ func (c *CheckCD) Execute(ctx context.Context) error {
 
 		channelID := os.Getenv("DISCORD_CHANNEL_ID_FOR_CD")
 
+		userMention, ok := DiscordUsers[utils.ToSnakeCase(issue.Issue.Fields.Assignee.DisplayName)]
+		if ok {
+			userMention = fmt.Sprintf("||<@%s>||", userMention)
+		}
+
 		embed := interfaces.EmbedData{
 			Title:     "🔔 Deploy em Homologação",
 			CreatedAt: time.Now(),
 			Message:   message,
 			Author:    issue.Issue.Fields.Assignee.DisplayName,
 			AuthorURL: avatarURL,
+			Content:   fmt.Sprintf("📰 Primeiro na fila para a liberação em homologação %s", userMention),
 			Fields: []*interfaces.EmbedField{
 				{
 					Name:   " ",
@@ -146,14 +151,7 @@ func (c *CheckCD) extractHash(deploymentString string) (string, error) {
 	return hash, nil
 }
 
-func (c *CheckCD) generateDeployNotification(cardKey string, author string, base work.CodeBase, hash string) string {
-	authorMention, ok := DiscordUsers[utils.ToSnakeCase(author)]
-	if ok {
-		authorMention = fmt.Sprintf("<@%s>", authorMention)
-	} else {
-		authorMention = author
-	}
-
+func (c *CheckCD) generateDeployNotification(cardKey string, base work.CodeBase, hash string) string {
 	message := fmt.Sprintf("Chave do Card: %s\n", cardKey)
 	message += fmt.Sprintf("Repositorio: `%s`\n", base)
 	message += fmt.Sprintf("Hash do Commit: %s\n\n", hash)
@@ -162,7 +160,6 @@ func (c *CheckCD) generateDeployNotification(cardKey string, author string, base
 	message += fmt.Sprintf("git checkout -b %s origin/homolog\n", cardKey)
 	message += fmt.Sprintf("git cherry-pick %s\n", hash)
 	message += fmt.Sprintf("```\n")
-	message += fmt.Sprintf("||%s||\n", authorMention)
 
 	return message
 }

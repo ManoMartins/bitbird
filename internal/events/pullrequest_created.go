@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -111,6 +112,8 @@ func (p *PullRequestCreated) Execute(ctx context.Context, event PullRequestEvent
 		return err
 	}
 
+	users := p.getContent(append([]string{event.Actor.DisplayName}, prReviewersName...))
+
 	channelID := os.Getenv("DISCORD_CHANNEL_ID_FOR_PR")
 	messageID, err := p.notifier.SendNotificationEmbed(ctx, channelID, interfaces.EmbedData{
 		Title:     "🚀 Novo Pull Request",
@@ -118,6 +121,7 @@ func (p *PullRequestCreated) Execute(ctx context.Context, event PullRequestEvent
 		Message:   message,
 		Author:    event.Actor.DisplayName,
 		AuthorURL: avatarURL,
+		Content:   users,
 		Fields: []*interfaces.EmbedField{
 			{
 				Name:   " ",
@@ -150,35 +154,36 @@ func (p *PullRequestCreated) GetUserAvatarURL(ctx context.Context, input string)
 }
 
 func (p *PullRequestCreated) formatMessage(pr FormatMessageData) string {
-	authorMention, ok := DiscordUsers[utils.ToSnakeCase(pr.Author)]
-
-	if ok {
-		authorMention = fmt.Sprintf("<@%s>", authorMention)
-	} else {
-		authorMention = pr.Author
-	}
-
 	message := fmt.Sprintf("Título: `%s`\n", pr.Title)
 	message += fmt.Sprintf("Destino: `%s`\n", pr.Destination)
-	message += fmt.Sprintf("Repositorio: `%s`\n\n", pr.RepoName)
-	message += fmt.Sprintf("||%s||\n", authorMention)
+	message += fmt.Sprintf("Repositorio: `%s`\n", pr.RepoName)
 
 	if len(pr.Reviewers) > 0 {
 		message += "\n**📝 Revisores:**\n"
 		for _, reviewer := range pr.Reviewers {
-			reviewerMention, ok := DiscordUsers[utils.ToSnakeCase(reviewer)]
-
-			if ok {
-				reviewerMention = fmt.Sprintf("<@%s>", reviewerMention)
-			} else {
-				reviewerMention = reviewer
-			}
-
-			message += fmt.Sprintf("- %s\n", reviewerMention)
+			message += fmt.Sprintf("- %s\n", reviewer)
 		}
 	} else {
 		message += "\n*Nenhum revisor atribuído.*\n"
 	}
 
 	return message
+}
+
+func (p *PullRequestCreated) getContent(users []string) string {
+	if len(users) == 0 {
+		return "📰 Um novo Pull Request foi aberto"
+	}
+
+	var usersMention []string
+	for _, user := range users {
+		userMention, ok := DiscordUsers[utils.ToSnakeCase(user)]
+
+		if ok {
+			userMention = fmt.Sprintf("<@%s>", userMention)
+			usersMention = append(usersMention, userMention)
+		}
+	}
+
+	return fmt.Sprintf("📰 Um novo Pull Request foi aberto ||%s||", strings.Join(usersMention, " "))
 }

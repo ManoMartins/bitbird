@@ -103,18 +103,23 @@ func (d *DiscordNotifier) SendNotificationEmbed(ctx context.Context, channelID s
 		})
 	}
 
-	message, err := d.dg.ChannelMessageSendEmbed(channelID, &discordgo.MessageEmbed{
-		//Type:        discordgo.EmbedType("rich"),
-		Title:       embed.Title,
-		Description: embed.Message,
-		Timestamp:   embed.CreatedAt.Format(time.RFC3339),
-		Color:       0x8e2cf0,
-		Footer: &discordgo.MessageEmbedFooter{
-			Text:    embed.Author,
-			IconURL: embed.AuthorURL,
+	message, err := d.dg.ChannelMessageSendComplex(
+		channelID,
+		&discordgo.MessageSend{
+			Content: embed.Content,
+			Embed: &discordgo.MessageEmbed{
+				Title:       embed.Title,
+				Description: embed.Message,
+				Timestamp:   embed.CreatedAt.Format(time.RFC3339),
+				Color:       0x8e2cf0,
+				Fields:      fields,
+				Footer: &discordgo.MessageEmbedFooter{
+					Text:    embed.Author,
+					IconURL: embed.AuthorURL,
+				},
+			},
 		},
-		Fields: fields,
-	})
+	)
 
 	if err != nil {
 		return "", err

@@ -18,6 +18,7 @@ type EmbedData struct {
 	Author    string
 	AuthorURL string
 	Fields    []*EmbedField
+	Content   string
 }
 
 type Notifier interface {
