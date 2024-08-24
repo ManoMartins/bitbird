@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/manomartins/bitbird/configs"
 	chat_notify "github.com/manomartins/bitbird/internal/chat_notify"
@@ -13,7 +12,9 @@ import (
 	storage "github.com/manomartins/bitbird/internal/storage"
 	"github.com/manomartins/bitbird/internal/work"
 	"github.com/robfig/cron/v3"
-	"io/ioutil"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+	"io"
 	"log"
 	"net/http"
 
@@ -25,7 +26,7 @@ var notifier interfaces.Notifier
 type eventFunc func(ctx context.Context, event events.PullRequestEvent) error
 
 func handleWebhook(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Cannot read body", http.StatusBadRequest)
 		return
@@ -37,7 +38,14 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx := r.Context()
 	eventKey := r.Header.Get("X-Event-Key")
+
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("pull_request_created.event")
+	span.SetAttributes(
+		attribute.String("pull_request.event_key", eventKey),
+	)
 
 	messagesStorage := storage.NewPullRequestMessagesMongo()
 	eventPullRequestCreated := events.NewPullRequestCreated(notifier, messagesStorage)
@@ -56,11 +64,10 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if handler, exists := eventHandlers[eventKey]; exists {
-		err = handler(r.Context(), event)
-
-		fmt.Println("Error handling event", err)
+		err = handler(ctx, event)
 
 		if err != nil {
+			log.Println("Error handling event", err)
 			http.Error(w, "Error handling event", http.StatusInternalServerError)
 			return
 		}
@@ -106,7 +113,7 @@ func main() {
 		deploymentQueue := storage.NewDeploymentQueueMongo()
 		checkCD := events.NewCheckCD(notifier, jiraWork, deploymentQueue)
 
-		err := checkCD.Execute()
+		err := checkCD.Execute(ctx)
 		if err != nil {
 			return
 		}

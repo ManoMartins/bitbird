@@ -1,6 +1,7 @@
 package events
 
 import (
+	"context"
 	"fmt"
 	"github.com/andygrunwald/go-jira"
 	"github.com/manomartins/bitbird/internal/interfaces"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"sync"
+	"time"
 )
 
 var wg sync.WaitGroup
@@ -33,7 +35,7 @@ func NewCheckCD(notifier interfaces.Notifier, issueService interfaces.IssueServi
 	}
 }
 
-func (c *CheckCD) Execute() error {
+func (c *CheckCD) Execute(ctx context.Context) error {
 	issues := make(chan *IssueChan, 3)
 
 	wg.Add(3)
@@ -62,8 +64,29 @@ func (c *CheckCD) Execute() error {
 			hash,
 		)
 
+		avatarURL, err := c.GetUserAvatarURL(ctx, issue.Issue.Fields.Assignee.DisplayName)
+		if err != nil {
+			return err
+		}
+
 		channelID := os.Getenv("DISCORD_CHANNEL_ID_FOR_CD")
-		messageID, err := c.notifier.SendNotification(channelID, message)
+
+		embed := interfaces.EmbedData{
+			Title:     "🔔 Deploy em Homologação",
+			CreatedAt: time.Now(),
+			Message:   message,
+			Author:    issue.Issue.Fields.Assignee.DisplayName,
+			AuthorURL: avatarURL,
+			Fields: []*interfaces.EmbedField{
+				{
+					Name:   " ",
+					Value:  fmt.Sprintf("⚠️ **Ação:** Realizar o cherry-pick usando o comando acima e revisar o código."),
+					Inline: false,
+				},
+			},
+		}
+		messageID, err := c.notifier.SendNotificationEmbed(ctx, channelID, embed)
+
 		if err != nil {
 			return err
 		}
@@ -125,21 +148,31 @@ func (c *CheckCD) extractHash(deploymentString string) (string, error) {
 
 func (c *CheckCD) generateDeployNotification(cardKey string, author string, base work.CodeBase, hash string) string {
 	authorMention, ok := DiscordUsers[utils.ToSnakeCase(author)]
-	if !ok {
+	if ok {
+		authorMention = fmt.Sprintf("<@%s>", authorMention)
+	} else {
 		authorMention = author
 	}
 
-	message := "🔔 **Deploy em Homologação**\n\n"
-	message += fmt.Sprintf("**Chave do Card:** %s\n", cardKey)
-	message += fmt.Sprintf("**Autor:** %s\n", authorMention)
-	message += fmt.Sprintf("**Repositorio:** %s\n", base)
-	message += fmt.Sprintf("**Hash do Commit:** %s\n\n", hash)
+	message := fmt.Sprintf("Chave do Card: %s\n", cardKey)
+	message += fmt.Sprintf("Repositorio: `%s`\n", base)
+	message += fmt.Sprintf("Hash do Commit: %s\n\n", hash)
 	message += fmt.Sprintf("📋 **Comando Git:**\n")
 	message += fmt.Sprintf("```bash\n")
 	message += fmt.Sprintf("git checkout -b %s origin/homolog\n", cardKey)
 	message += fmt.Sprintf("git cherry-pick %s\n", hash)
 	message += fmt.Sprintf("```\n")
-	message += fmt.Sprintf("⚠️ **Ação:** Realizar o cherry-pick usando o comando acima e revisar o código.\n")
+	message += fmt.Sprintf("||%s||\n", authorMention)
 
 	return message
+}
+
+func (c *CheckCD) GetUserAvatarURL(ctx context.Context, input string) (string, error) {
+	userID, ok := DiscordUsers[utils.ToSnakeCase(input)]
+
+	if ok {
+		return c.notifier.GetUserAvatarURL(ctx, userID)
+	}
+
+	return "", nil
 }
