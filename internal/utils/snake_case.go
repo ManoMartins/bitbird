@@ -1,17 +1,23 @@
 package utils
 
 import (
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 	"regexp"
 	"strings"
 	"unicode"
 )
 
-// ToSnakeCase converte uma string para snake_case
 func ToSnakeCase(input string) string {
+	// Remover acentos
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	normalized, _, _ := transform.String(t, input)
+
 	var snake strings.Builder
 	previousWasLower := false
 
-	for i, r := range input {
+	for i, r := range normalized {
 		if unicode.IsUpper(r) {
 			if i > 0 && previousWasLower {
 				snake.WriteRune('_')

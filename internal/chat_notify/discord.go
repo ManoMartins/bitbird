@@ -1,9 +1,12 @@
 package chat_notify
 
 import (
+	"context"
 	"github.com/bwmarrin/discordgo"
 	"github.com/manomartins/bitbird/configs"
+	"github.com/manomartins/bitbird/internal/interfaces"
 	"os"
+	"time"
 )
 
 type DiscordNotifier struct {
@@ -87,4 +90,47 @@ func (d *DiscordNotifier) RemoveEmoji(channelID string, messageID string) error 
 	}
 
 	return nil
+}
+
+func (d *DiscordNotifier) SendNotificationEmbed(ctx context.Context, channelID string, embed interfaces.EmbedData) (string, error) {
+	var fields []*discordgo.MessageEmbedField
+
+	for i := range embed.Fields {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   embed.Fields[i].Name,
+			Value:  embed.Fields[i].Value,
+			Inline: embed.Fields[i].Inline,
+		})
+	}
+
+	message, err := d.dg.ChannelMessageSendEmbed(channelID, &discordgo.MessageEmbed{
+		//Type:        discordgo.EmbedType("rich"),
+		Title:       embed.Title,
+		Description: embed.Message,
+		Timestamp:   embed.CreatedAt.Format(time.RFC3339),
+		Color:       0x8e2cf0,
+		Footer: &discordgo.MessageEmbedFooter{
+			Text:    embed.Author,
+			IconURL: embed.AuthorURL,
+		},
+		Fields: fields,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return message.ID, nil
+}
+
+func (d *DiscordNotifier) GetUserAvatarURL(ctx context.Context, userID string) (string, error) {
+	user, err := d.dg.User(userID)
+
+	if err != nil {
+		return "", err
+	}
+
+	avatarURL := user.AvatarURL("")
+
+	return avatarURL, nil
 }

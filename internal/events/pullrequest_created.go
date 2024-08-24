@@ -8,28 +8,27 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/trace"
 	"os"
 	"strconv"
-	"strings"
+	"time"
 )
 
 var DiscordUsers = map[string]string{
-	"alexandre_valim":                "<@1258102843798323404>",
-	"david_almeida_santos":           "<@550057532631154719>",
-	"gabriel_alves_de_lima":          "<@310979218320261120>",
-	"jean_paes_rabello":              "<@260392808723120138>",
-	"joao_victor_pereira_dos_santos": "<@594647301411176451>",
-	"liziane_tamm":                   "<@714928138777526313>",
-	"manoel_martins":                 "<@667184274428002345>",
-	"matheus_de_paula_cordeiro":      "<@1055305522720555069>",
-	"marcio_d_carvalho":              "<@642135148334415882>",
-	"tassyo_monteiro":                "<@905438526055800874>",
-	"william_rodrigues":              "<@960526439927672902>",
-	"ana_alice_honorio":              "<@821798354152456313>",
-	"luan_s_calais":                  "<@610988261665538059>",
-	"samantha_vale":                  "<@819642515925237790>",
-	"luiz_amorim":                    "<@443866985328017408>",
+	"alexandre_valim":                "1258102843798323404",
+	"david_almeida_santos":           "550057532631154719",
+	"gabriel_alves_de_lima":          "310979218320261120",
+	"jean_paes_rabello":              "260392808723120138",
+	"joao_victor_pereira_dos_santos": "594647301411176451",
+	"liziane_tamm":                   "714928138777526313",
+	"manoel_martins":                 "667184274428002345",
+	"matheus_de_paula_cordeiro":      "1055305522720555069",
+	"marcio_d_carvalho":              "642135148334415882",
+	"tassyo_monteiro":                "905438526055800874",
+	"william_rodrigues":              "960526439927672902",
+	"ana_alice_honorio":              "821798354152456313",
+	"luan_s_calais":                  "610988261665538059",
+	"samantha_vale":                  "819642515925237790",
+	"luiz_amorim":                    "443866985328017408",
 
 	//"henrique_siqueira_cheim": "<@>",
 	//"guilherme_borba":         "<@>",
@@ -82,24 +81,14 @@ func NewPullRequestCreated(notifier interfaces.Notifier, messagesStorage interfa
 }
 
 func (p *PullRequestCreated) Execute(ctx context.Context, event PullRequestEvent) error {
-	prCounter.Add(ctx, 1)
-	span := trace.SpanFromContext(ctx)
-	span.AddEvent("pull_request_created.event")
+	opt := metric.WithAttributes(
+		attribute.Key("codebase").String(event.Repository.Name),
+	)
+	prCounter.Add(ctx, 1, opt)
 
 	var prReviewersName []string
 	for _, reviewer := range event.PullRequest.Reviewers {
 		prReviewersName = append(prReviewersName, reviewer.DisplayName)
-	}
-
-	span.SetAttributes(
-		attribute.Int("pull_request.id", event.PullRequest.ID),
-		attribute.String("pull_request.author", event.Actor.DisplayName),
-	)
-
-	if len(event.PullRequest.Reviewers) > 0 {
-		span.SetAttributes(
-			attribute.String("pull_request.reviewers", strings.Join(prReviewersName, ", ")),
-		)
 	}
 
 	ctx, spanSendMessage := tracer.Start(ctx, "pull_request_created.send_message")
@@ -117,8 +106,27 @@ func (p *PullRequestCreated) Execute(ctx context.Context, event PullRequestEvent
 			Link:        event.PullRequest.Links.HTML.Href,
 		})
 
+	avatarURL, err := p.GetUserAvatarURL(ctx, event.Actor.DisplayName)
+	if err != nil {
+		return err
+	}
+
 	channelID := os.Getenv("DISCORD_CHANNEL_ID_FOR_PR")
-	messageID, err := p.notifier.SendNotification(channelID, message)
+	messageID, err := p.notifier.SendNotificationEmbed(ctx, channelID, interfaces.EmbedData{
+		Title:     "🚀 Novo Pull Request",
+		CreatedAt: time.Now(),
+		Message:   message,
+		Author:    event.Actor.DisplayName,
+		AuthorURL: avatarURL,
+		Fields: []*interfaces.EmbedField{
+			{
+				Name:   " ",
+				Value:  fmt.Sprintf("[**🔗 Clique aqui para ver o PR**](%s)", event.PullRequest.Links.HTML.Href),
+				Inline: false,
+			},
+		},
+	})
+
 	if err != nil {
 		return err
 	}
@@ -131,27 +139,41 @@ func (p *PullRequestCreated) Execute(ctx context.Context, event PullRequestEvent
 	return nil
 }
 
-func (p *PullRequestCreated) formatMessage(pr FormatMessageData) string {
-	authorMention, ok := DiscordUsers[utils.ToSnakeCase(pr.Author)]
-	if !ok {
-		authorMention = pr.Author // Caso não haja mapeamento, use o nome do autor
+func (p *PullRequestCreated) GetUserAvatarURL(ctx context.Context, input string) (string, error) {
+	userID, ok := DiscordUsers[utils.ToSnakeCase(input)]
+
+	if ok {
+		return p.notifier.GetUserAvatarURL(ctx, userID)
 	}
 
-	message := "**🚀 *Detalhes do Pull Request:* **\n\n"
-	message += fmt.Sprintf("**Título:** `%s`\n", pr.Title)
-	message += fmt.Sprintf("**Status:** `%s`\n", pr.State)
-	message += fmt.Sprintf("**Autor:** %s\n", authorMention)
-	message += fmt.Sprintf("**Destino:** `%s`\n", pr.Destination)
-	message += fmt.Sprintf("**🌟 Repositorio:** `%s`\n", pr.RepoName)
-	message += fmt.Sprintf("**Link do PR:** [Abrir PR](%s)\n", pr.Link) // Link do PR
+	return "", nil
+}
+
+func (p *PullRequestCreated) formatMessage(pr FormatMessageData) string {
+	authorMention, ok := DiscordUsers[utils.ToSnakeCase(pr.Author)]
+
+	if ok {
+		authorMention = fmt.Sprintf("<@%s>", authorMention)
+	} else {
+		authorMention = pr.Author
+	}
+
+	message := fmt.Sprintf("Título: `%s`\n", pr.Title)
+	message += fmt.Sprintf("Destino: `%s`\n", pr.Destination)
+	message += fmt.Sprintf("Repositorio: `%s`\n\n", pr.RepoName)
+	message += fmt.Sprintf("||%s||\n", authorMention)
 
 	if len(pr.Reviewers) > 0 {
 		message += "\n**📝 Revisores:**\n"
 		for _, reviewer := range pr.Reviewers {
 			reviewerMention, ok := DiscordUsers[utils.ToSnakeCase(reviewer)]
-			if !ok {
-				reviewerMention = reviewer // Caso não haja mapeamento
+
+			if ok {
+				reviewerMention = fmt.Sprintf("<@%s>", reviewerMention)
+			} else {
+				reviewerMention = reviewer
 			}
+
 			message += fmt.Sprintf("- %s\n", reviewerMention)
 		}
 	} else {
