@@ -26,6 +26,7 @@ services:
     image: prom/prometheus:latest
     volumes:
       - ../prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     ports:
       - "9090:9090"
     depends_on:
@@ -46,9 +47,35 @@ services:
       - "9411:9411"
     depends_on:
       - otel-collector
+    volumes:
+      - jaeger_data:/data
+    networks:
+      - my-bridge-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin  # Você pode personalizar a senha padrão
+    restart: unless-stopped
+    depends_on:
+      - otel-collector
+      - prometheus
     networks:
       - my-bridge-network
 
 networks:
   my-bridge-network:
     external: true
+
+volumes:
+  prometheus_data:
+    driver: local
+  jaeger_data:
+    driver: local
+  grafana_data:
+    driver: local
