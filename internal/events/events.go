@@ -45,6 +45,7 @@ type PullRequest struct {
 	Source      PullRequestSource `json:"source"`
 	Destination Destination       `json:"destination"`
 	Reviewers   []Reviewer        `json:"reviewers"`
+	Actor       Actor             `json:"actor"`
 }
 
 type Actor struct {

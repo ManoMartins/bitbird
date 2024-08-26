@@ -35,18 +35,18 @@ func (p *PullRequestApproved) Execute(ctx context.Context, event PullRequestEven
 		return err
 	}
 
-	if !slices.Contains(acceptDM, utils.ToSnakeCase(event.Actor.DisplayName)) {
+	if !slices.Contains(acceptDM, utils.ToSnakeCase(event.PullRequest.Actor.DisplayName)) {
 		return nil
 	}
 
-	actorID, ok := DiscordUsers[utils.ToSnakeCase(event.Actor.DisplayName)]
+	actorID, ok := DiscordUsers[utils.ToSnakeCase(event.PullRequest.Actor.DisplayName)]
 	if !ok {
 		return nil
 	}
 
 	message := fmt.Sprintf(
 		"%s o pull request **%s** foi aprovado! [**Clique aqui para ver o PR**](%s). 🎉",
-		event.Actor.DisplayName,
+		event.PullRequest.Actor.DisplayName,
 		event.PullRequest.Title,
 		event.PullRequest.Links.HTML.Href,
 	)
