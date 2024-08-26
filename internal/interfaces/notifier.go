@@ -29,4 +29,5 @@ type Notifier interface {
 	RemoveEmoji(channelID string, messageId string) error
 	SendNotificationEmbed(ctx context.Context, channelID string, embed EmbedData) (string, error)
 	GetUserAvatarURL(ctx context.Context, userID string) (string, error)
+	SendDirectMessage(ctx context.Context, userID string, message string) error
 }

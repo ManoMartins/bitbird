@@ -139,3 +139,17 @@ func (d *DiscordNotifier) GetUserAvatarURL(ctx context.Context, userID string) (
 
 	return avatarURL, nil
 }
+
+func (d *DiscordNotifier) SendDirectMessage(ctx context.Context, userID string, message string) error {
+	channel, err := d.dg.UserChannelCreate(userID)
+	if err != nil {
+		return err
+	}
+
+	_, err = d.dg.ChannelMessageSend(channel.ID, message)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

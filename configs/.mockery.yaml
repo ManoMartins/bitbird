@@ -1,0 +1,8 @@
+quiet: False
+all: True
+recursive: True
+filename: "{{.InterfaceName}}.go"
+packages:
+  github.com/manomartins/bitbird:
+    config:
+      dir: "../internal/mocks"

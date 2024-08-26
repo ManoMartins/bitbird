@@ -2,7 +2,10 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"github.com/manomartins/bitbird/internal/interfaces"
+	"github.com/manomartins/bitbird/internal/utils"
+	"slices"
 	"strconv"
 )
 
@@ -25,6 +28,27 @@ func (p *PullRequestChangesRequest) Execute(ctx context.Context, event PullReque
 	}
 
 	err = p.notifier.AddChangeRequestEmoji(pr.ChannelID, pr.MessageID)
+	if err != nil {
+		return err
+	}
+
+	if !slices.Contains(acceptDM, utils.ToSnakeCase(event.Actor.DisplayName)) {
+		return nil
+	}
+
+	actorID, ok := DiscordUsers[utils.ToSnakeCase(event.Actor.DisplayName)]
+	if !ok {
+		return nil
+	}
+
+	message := fmt.Sprintf(
+		"%s, foi solicitado que você faça algumas alterações no pull request **%s**. [**Clique aqui para ver os detalhes**](%s). ✏️",
+		event.Actor.DisplayName,
+		event.PullRequest.Title,
+		event.PullRequest.Links.HTML.Href,
+	)
+
+	err = p.notifier.SendDirectMessage(ctx, actorID, message)
 	if err != nil {
 		return err
 	}
