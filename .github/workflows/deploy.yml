@@ -29,6 +29,6 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.OCI_USERNAME }}@${{ secrets.OCI_HOST }} << 'EOF'
             cd ${{ secrets.OCI_PATH }}
-            cd /deployments
+            cd /scripts
             sudo ./deploy.sh
           EOF
