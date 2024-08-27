@@ -59,6 +59,6 @@ type Repository struct {
 type PullRequestEvent struct {
 	Repository  Repository  `json:"repository"`
 	Actor       Actor       `json:"actor"`
-	PullRequest PullRequest `json:"pullRequest"`
+	PullRequest PullRequest `json:"pullrequest"`
 	Comment     Comment     `json:"comment"`
 }
