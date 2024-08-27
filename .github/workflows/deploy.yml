@@ -1,0 +1,37 @@
+name: Deploy to OCI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+
+      - name: Pull latest code on remote server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.OCI_USERNAME }}@${{ secrets.OCI_HOST }} << 'EOF'
+            cd ${{ secrets.OCI_PATH }}
+            git pull origin master
+          EOF
+
+      - name: Deploy Docker Compose
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.OCI_USERNAME }}@${{ secrets.OCI_HOST }} << 'EOF'
+            cd ${{ secrets.OCI_PATH }}
+            cd /deployments
+            sudo ./deploy.sh
+          EOF
