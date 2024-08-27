@@ -23,7 +23,7 @@ jobs:
 
       - name: Pull latest code on remote server
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.OCI_USERNAME }}@${{ secrets.OCI_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.OCI_USERNAME }}@${{ secrets.OCI_HOST }} << 'EOF'
             cd ${{ secrets.OCI_PATH }}
             git pull origin master
           EOF
