@@ -1,111 +1,131 @@
-package events
+package events_test
 
 import (
-	"errors"
-	"github.com/manomartins/bitbird/internal/mocks"
-	"github.com/manomartins/bitbird/internal/model"
-	"github.com/stretchr/testify/mock"
+	"context"
+	mocks "github.com/manomartins/bitbird/internal/mocks"
 	"testing"
 
+	"github.com/manomartins/bitbird/internal/events"
+	"github.com/manomartins/bitbird/internal/model"
+	"github.com/manomartins/bitbird/internal/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestPullRequestApproved_Execute_Success(t *testing.T) {
-	// Create the mocks
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
+func TestPullRequestApproved_Execute_AddApprovalEmoji(t *testing.T) {
+	mockNotifier := new(mocks.MockNotifier)
+	mockMessagesStorage := new(mocks.MockPullRequestMessagesInterface)
 
-	// Set up the expected interactions
-	expectedPrID := "1"
-	expectedMessageID := "1"
-	expectedPrMessage := &model.PullRequestMessageModel{PrID: "1", MessageID: "1"}
+	pullRequestApproved := events.NewPullRequestApproved(mockNotifier, mockMessagesStorage)
 
-	messagesStorage.On("GetById", expectedPrID).Return(expectedPrMessage, nil)
-	notifier.On("AddApprovalEmoji", expectedMessageID).Return(nil)
+	ctx := context.Background()
+	prID := 123
+	pr := &model.PullRequestMessageModel{
+		ChannelID: "channel-id",
+		MessageID: "message-id",
+	}
 
-	// Create the PullRequestRemovedAction instance
-	prApproved := NewPullRequestApproved(notifier, messagesStorage)
+	mockMessagesStorage.On("GetById", "123").Return(pr, nil)
+	mockNotifier.On("AddApprovalEmoji", "channel-id", "message-id").Return(nil)
 
-	// Define the event to test
-	event := PullRequestEvent{
-		PullRequest: PullRequest{
-			ID: 1,
+	event := events.PullRequestEvent{
+		PullRequest: events.PullRequest{
+			ID:    prID,
+			Title: "Test PR",
+			Links: events.PullRequestLinks{
+				HTML: events.HTML{Href: "http://example.com/pr"},
+			},
+		},
+		Actor: events.Actor{
+			DisplayName: "Manoel Martins",
 		},
 	}
 
-	// Call the method
-	err := prApproved.Execute(event)
-
-	// Assert that there were no errors
+	err := pullRequestApproved.Execute(ctx, event)
 	assert.NoError(t, err)
 
-	// Assert that the expected methods were called
-	messagesStorage.AssertCalled(t, "GetById", expectedPrID)
-	notifier.AssertCalled(t, "AddApprovalEmoji", expectedMessageID)
+	mockMessagesStorage.AssertExpectations(t)
+	mockNotifier.AssertExpectations(t)
 }
 
-func TestPullRequestApproved_Execute_GetMessageError(t *testing.T) {
-	// Create the mocks
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
+func TestPullRequestApproved_Execute_SendDirectMessage(t *testing.T) {
+	mockNotifier := new(mocks.MockNotifier)
+	mockMessagesStorage := new(mocks.MockPullRequestMessagesInterface)
 
-	// Set up the expected interactions
-	expectedPrID := "1"
-	expectedError := errors.New("error getting PR message")
+	pullRequestApproved := events.NewPullRequestApproved(mockNotifier, mockMessagesStorage)
 
-	messagesStorage.On("GetById", expectedPrID).Return(nil, expectedError)
+	ctx := context.Background()
+	prID := 123
+	pr := &model.PullRequestMessageModel{
+		ChannelID: "channel-id",
+		MessageID: "message-id",
+	}
 
-	// Create the PullRequestRemovedAction instance
-	prApproved := NewPullRequestApproved(notifier, messagesStorage)
+	mockMessagesStorage.On("GetById", "123").Return(pr, nil)
+	mockNotifier.On("AddApprovalEmoji", "channel-id", "message-id").Return(nil)
 
-	// Define the event to test
-	event := PullRequestEvent{
-		PullRequest: PullRequest{
-			ID: 1,
+	event := events.PullRequestEvent{
+		PullRequest: events.PullRequest{
+			ID:    prID,
+			Title: "Test PR",
+			Links: events.PullRequestLinks{
+				HTML: events.HTML{Href: "http://example.com/pr"},
+			},
+			Actor: events.Actor{
+				DisplayName: "Manoel Martins",
+			},
 		},
 	}
 
-	// Call the method
-	err := prApproved.Execute(event)
+	// Simula o usuário no DiscordUsers
+	events.DiscordUsers[utils.ToSnakeCase(event.PullRequest.Actor.DisplayName)] = "123456789"
 
-	// Assert that the error is the one expected
-	assert.Equal(t, expectedError, err)
+	expectedMessage := "Manoel Martins o pull request **Test PR** foi aprovado! [**Clique aqui para ver o PR**](http://example.com/pr). 🎉"
 
-	// Assert that AddApprovalEmoji was not called
-	notifier.AssertNotCalled(t, "AddApprovalEmoji", mock.Anything)
+	mockNotifier.On("SendDirectMessage", ctx, "123456789", expectedMessage).Return(nil)
+
+	err := pullRequestApproved.Execute(ctx, event)
+	assert.NoError(t, err)
+
+	mockMessagesStorage.AssertExpectations(t)
+	mockNotifier.AssertExpectations(t)
 }
 
-func TestPullRequestApproved_Execute_AddEmojiError(t *testing.T) {
-	// Create the mocks
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
+func TestPullRequestApproved_Execute_NoDirectMessageForNonAcceptedUsers(t *testing.T) {
+	mockNotifier := new(mocks.MockNotifier)
+	mockMessagesStorage := new(mocks.MockPullRequestMessagesInterface)
 
-	// Set up the expected interactions
-	expectedPrID := "1"
-	expectedMessageID := "1"
-	expectedPrMessage := &model.PullRequestMessageModel{PrID: "1", MessageID: "1"}
-	expectedError := errors.New("error adding emoji")
+	pullRequestApproved := events.NewPullRequestApproved(mockNotifier, mockMessagesStorage)
 
-	messagesStorage.On("GetById", expectedPrID).Return(expectedPrMessage, nil)
-	notifier.On("AddApprovalEmoji", expectedMessageID).Return(expectedError)
+	ctx := context.Background()
+	prID := 123
+	pr := &model.PullRequestMessageModel{
+		ChannelID: "channel-id",
+		MessageID: "message-id",
+	}
 
-	// Create the PullRequestRemovedAction instance
-	prApproved := NewPullRequestApproved(notifier, messagesStorage)
+	mockMessagesStorage.On("GetById", "123").Return(pr, nil)
+	mockNotifier.On("AddApprovalEmoji", "channel-id", "message-id").Return(nil)
 
-	// Define the event to test
-	event := PullRequestEvent{
-		PullRequest: PullRequest{
-			ID: 1,
+	event := events.PullRequestEvent{
+		PullRequest: events.PullRequest{
+			ID:    prID,
+			Title: "Test PR",
+			Links: events.PullRequestLinks{
+				HTML: events.HTML{Href: "http://example.com/pr"},
+			},
+		},
+		Actor: events.Actor{
+			DisplayName: "Manoel Martins",
 		},
 	}
 
-	// Call the method
-	err := prApproved.Execute(event)
+	err := pullRequestApproved.Execute(ctx, event)
+	assert.NoError(t, err)
 
-	// Assert that the error is the one expected
-	assert.Equal(t, expectedError, err)
+	mockMessagesStorage.AssertExpectations(t)
+	mockNotifier.AssertExpectations(t)
 
-	// Assert that the expected methods were called
-	messagesStorage.AssertCalled(t, "GetById", expectedPrID)
-	notifier.AssertCalled(t, "AddApprovalEmoji", expectedMessageID)
+	// Verifica que SendDirectMessage não foi chamado
+	mockNotifier.AssertNotCalled(t, "SendDirectMessage", mock.Anything, mock.Anything, mock.Anything)
 }

@@ -1,6 +1,7 @@
 package events
 
 import (
+	"context"
 	"errors"
 	"github.com/manomartins/bitbird/internal/mocks"
 	"github.com/manomartins/bitbird/internal/model"
@@ -13,22 +14,22 @@ import (
 // Test case when everything works as expected
 func TestPullRequestCommentCreated_Execute_Success(t *testing.T) {
 	// Arrange
-	notifier := new(mocks.Notifier)
-	messagesStorageMock := new(mocks.PullRequestMessagesInterface)
+	notifier := new(interfaces.MockNotifier)
+	messagesStorageMock := new(interfaces.MockPullRequestMessagesInterface)
 
 	event := PullRequestEvent{
 		PullRequest: PullRequest{ID: 123},
 		Comment:     Comment{Content: CommentContent{Raw: "This is a test comment"}},
 	}
-	prMessage := &model.PullRequestMessageModel{PrID: "123", MessageID: "message-id"}
+	prMessage := &model.PullRequestMessageModel{PrID: "123", MessageID: "message-id", ChannelID: "channel-id"}
 
 	messagesStorageMock.On("GetById", "123").Return(prMessage, nil)
-	notifier.On("SendCommentNotification", "message-id", "This is a test comment").Return(nil)
+	notifier.On("SendCommentNotification", "channel-id", "message-id", "This is a test comment").Return(nil)
 
 	sut := NewPullRequestCommentCreated(notifier, messagesStorageMock)
 
 	// Act
-	err := sut.Execute(event)
+	err := sut.Execute(context.Background(), event)
 
 	// Assert
 	assert.NoError(t, err)
@@ -39,51 +40,51 @@ func TestPullRequestCommentCreated_Execute_Success(t *testing.T) {
 // Test case when there is an error retrieving the pull request message
 func TestPullRequestCommentCreated_Execute_GetPullRequestMessageError(t *testing.T) {
 	// Arrange
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
+	notifier := new(interfaces.MockNotifier)
+	messagesStorageMock := new(interfaces.MockPullRequestMessagesInterface)
 
 	expectedError := errors.New("storage error")
 
 	event := PullRequestEvent{PullRequest: PullRequest{ID: 123}}
 
-	messagesStorage.On("GetById", "123").Return(nil, expectedError)
+	messagesStorageMock.On("GetById", "123").Return(nil, expectedError)
 
-	sut := NewPullRequestCommentCreated(notifier, messagesStorage)
+	sut := NewPullRequestCommentCreated(notifier, messagesStorageMock)
 
 	// Act
-	err := sut.Execute(event)
+	err := sut.Execute(context.Background(), event)
 
 	// Assert
 	assert.Error(t, err)
 	assert.Equal(t, expectedError, err)
-	messagesStorage.AssertExpectations(t)
+	messagesStorageMock.AssertExpectations(t)
 	notifier.AssertNotCalled(t, "SendCommentNotification", mock.Anything, mock.Anything)
 }
 
 // Test case when there is an error sending the comment notification
 func TestPullRequestCommentCreated_Execute_SendCommentNotificationError(t *testing.T) {
 	// Arrange
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
+	notifier := new(interfaces.MockNotifier)
+	messagesStorageMock := new(interfaces.MockPullRequestMessagesInterface)
 
 	expectedError := errors.New("notifier error")
 	event := PullRequestEvent{
 		PullRequest: PullRequest{ID: 123},
 		Comment:     Comment{Content: CommentContent{Raw: "This is a test comment"}},
 	}
-	prMessage := &model.PullRequestMessageModel{PrID: "123", MessageID: "message-id"}
+	prMessage := &model.PullRequestMessageModel{PrID: "123", MessageID: "message-id", ChannelID: "channel-id"}
 
-	messagesStorage.On("GetById", "123").Return(prMessage, nil)
-	notifier.On("SendCommentNotification", "message-id", "This is a test comment").Return(expectedError)
+	messagesStorageMock.On("GetById", "123").Return(prMessage, nil)
+	notifier.On("SendCommentNotification", "channel-id", "message-id", "This is a test comment").Return(expectedError)
 
-	sut := NewPullRequestCommentCreated(notifier, messagesStorage)
+	sut := NewPullRequestCommentCreated(notifier, messagesStorageMock)
 
 	// Act
-	err := sut.Execute(event)
+	err := sut.Execute(context.Background(), event)
 
 	// Assert
 	assert.Error(t, err)
 	assert.Equal(t, expectedError, err)
-	messagesStorage.AssertExpectations(t)
+	messagesStorageMock.AssertExpectations(t)
 	notifier.AssertExpectations(t)
 }

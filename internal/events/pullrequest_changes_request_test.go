@@ -1,8 +1,9 @@
 package events
 
 import (
+	"context"
 	"errors"
-	"github.com/manomartins/bitbird/internal/mocks"
+	interfaces "github.com/manomartins/bitbird/internal/mocks"
 	"github.com/manomartins/bitbird/internal/model"
 	"testing"
 
@@ -12,19 +13,19 @@ import (
 
 func TestPullRequestChangesRequest_Execute_Success(t *testing.T) {
 	// Arrange
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
+	notifier := new(interfaces.MockNotifier)
+	messagesStorage := new(interfaces.MockPullRequestMessagesInterface)
 
 	event := PullRequestEvent{PullRequest: PullRequest{ID: 123}}
 	prMessage := &model.PullRequestMessageModel{PrID: "123", MessageID: "message-id"}
 
 	messagesStorage.On("GetById", "123").Return(prMessage, nil)
-	notifier.On("AddChangeRequestEmoji", "message-id").Return(nil)
+	notifier.On("AddChangeRequestEmoji", mock.AnythingOfType("string"), "message-id").Return(nil)
 
 	sut := NewPullRequestChangesRequest(notifier, messagesStorage)
 
 	// Act
-	err := sut.Execute(event)
+	err := sut.Execute(context.Background(), event)
 
 	// Assert
 	assert.NoError(t, err)
@@ -34,8 +35,8 @@ func TestPullRequestChangesRequest_Execute_Success(t *testing.T) {
 
 func TestPullRequestChangesRequest_Execute_GetPullRequestMessageError(t *testing.T) {
 	// Arrange
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
+	notifier := new(interfaces.MockNotifier)
+	messagesStorage := new(interfaces.MockPullRequestMessagesInterface)
 
 	expectedError := errors.New("storage error")
 
@@ -46,7 +47,7 @@ func TestPullRequestChangesRequest_Execute_GetPullRequestMessageError(t *testing
 	sut := NewPullRequestChangesRequest(notifier, messagesStorage)
 
 	// Act
-	err := sut.Execute(event)
+	err := sut.Execute(context.Background(), event)
 
 	// Assert
 	assert.Error(t, err)
@@ -57,8 +58,8 @@ func TestPullRequestChangesRequest_Execute_GetPullRequestMessageError(t *testing
 
 func TestPullRequestChangesRequest_Execute_AddChangeRequestEmojiError(t *testing.T) {
 	// Arrange
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
+	notifier := new(interfaces.MockNotifier)
+	messagesStorage := new(interfaces.MockPullRequestMessagesInterface)
 
 	expectedError := errors.New("notifier error")
 
@@ -66,12 +67,12 @@ func TestPullRequestChangesRequest_Execute_AddChangeRequestEmojiError(t *testing
 	prMessage := &model.PullRequestMessageModel{PrID: "123", MessageID: "message-id"}
 
 	messagesStorage.On("GetById", "123").Return(prMessage, nil)
-	notifier.On("AddChangeRequestEmoji", "message-id").Return(expectedError)
+	notifier.On("AddChangeRequestEmoji", mock.AnythingOfType("string"), "message-id").Return(expectedError)
 
 	sut := NewPullRequestChangesRequest(notifier, messagesStorage)
 
 	// Act
-	err := sut.Execute(event)
+	err := sut.Execute(context.Background(), event)
 
 	// Assert
 	assert.Error(t, err)

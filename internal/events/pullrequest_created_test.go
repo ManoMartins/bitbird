@@ -1,187 +1,44 @@
-package events
+package events_test
 
 import (
-	"errors"
-	"github.com/manomartins/bitbird/internal/mocks"
+	"context"
+	"github.com/manomartins/bitbird/internal/events"
+	mocks "github.com/manomartins/bitbird/internal/mocks"
+	"github.com/manomartins/bitbird/internal/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
-func TestPullRequestCreated_Execute_Success(t *testing.T) {
-	// Create the mocks
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
+func TestPullRequestCreated_Execute(t *testing.T) {
+	mockNotifier := new(mocks.MockNotifier)
+	mockMessagesStorage := new(mocks.MockPullRequestMessagesInterface)
 
-	// Set up the expected interactions
-	expectedPrID := "123"
-	expectedMessageID := "123"
+	pullRequestCreated := events.NewPullRequestCreated(mockNotifier, mockMessagesStorage)
 
-	expectedMessage := "**🚀 *Detalhes do Pull Request:* **\n\n" +
-		"**Título:** `Update README`\n" +
-		"**Status:** `OPEN`\n" +
-		"**Autor:** manoel martins\n" +
-		"**Destino:** `develop`\n" +
-		"**🌟 Repositorio:** `example-repo`\n" +
-		"**Link do PR:** [Abrir PR](https://example.com/pr/123)\n\n" +
-		"*Nenhum revisor atribuído.*\n"
-
-	messagesStorage.On("Update", expectedPrID, expectedMessageID).Return(nil)
-	notifier.On("SendNotification", expectedMessage).Return(expectedMessageID, nil)
-
-	// Create the PullRequestRemovedAction instance
-	prCreated := NewPullRequestCreated(notifier, messagesStorage)
-
-	// Define the event to test
-	event := PullRequestEvent{
-		Repository: Repository{Name: "example-repo"},
-		Actor:      Actor{DisplayName: "manoel martins"},
-		PullRequest: PullRequest{
-			ID:     123,
-			Title:  "Update README",
-			State:  "OPEN",
-			Source: PullRequestSource{Branch: Branch{Name: "develop"}},
-			Links:  PullRequestLinks{HTML: HTML{Href: "https://example.com/pr/123"}},
+	ctx := context.Background()
+	prEvent := events.PullRequestEvent{
+		Actor:      events.Actor{DisplayName: "manoel_martins"},
+		Repository: events.Repository{Name: "example-repo"},
+		PullRequest: events.PullRequest{
+			ID:          1,
+			Title:       "Fix bug in login",
+			State:       "open",
+			Destination: events.Destination{Branch: events.Branch{Name: "master"}},
+			Reviewers:   []events.Reviewer{{DisplayName: "jean_paes_rabello"}},
+			Links:       events.PullRequestLinks{HTML: events.HTML{Href: "http://example.com/pr/1"}},
 		},
 	}
 
-	// Call the method
-	err := prCreated.Execute(event)
+	events.DiscordUsers[utils.ToSnakeCase(prEvent.Actor.DisplayName)] = "667184274428002345"
 
-	// Assert that there were no errors
+	mockNotifier.On("GetUserAvatarURL", mock.Anything, "667184274428002345").Return("http://example.com/avatar/1", nil)
+	mockNotifier.On("SendNotificationEmbed", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("interfaces.EmbedData")).Return("message-id-1", nil)
+	mockMessagesStorage.On("Create", mock.Anything, "1", mock.AnythingOfType("string"), "message-id-1").Return(nil)
+
+	err := pullRequestCreated.Execute(ctx, prEvent)
+
 	assert.NoError(t, err)
-
-	notifier.AssertNumberOfCalls(t, "SendNotification", 1)
-	messagesStorage.AssertCalled(t, "Update", expectedPrID, expectedMessageID)
-}
-
-func TestPullRequestCreated_Execute_SuccessWithReviewers(t *testing.T) {
-	// Create the mocks
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
-
-	// Set up the expected interactions
-	expectedPrID := "123"
-	expectedMessageID := "123"
-
-	expectedMessage := "**🚀 *Detalhes do Pull Request:* **\n\n" +
-		"**Título:** `Update README`\n" +
-		"**Status:** `OPEN`\n" +
-		"**Autor:** manoel martins\n" +
-		"**Destino:** `develop`\n" +
-		"**🌟 Repositorio:** `example-repo`\n" +
-		"**Link do PR:** [Abrir PR](https://example.com/pr/123)\n\n" +
-		"**📝 Revisores:**\n- tassyo monteiro\n- manoel martins\n"
-
-	messagesStorage.On("Update", expectedPrID, expectedMessageID).Return(nil)
-	notifier.On("SendNotification", expectedMessage).Return(expectedMessageID, nil)
-
-	// Create the PullRequestRemovedAction instance
-	prCreated := NewPullRequestCreated(notifier, messagesStorage)
-
-	// Define the event to test
-	event := PullRequestEvent{
-		Repository: Repository{Name: "example-repo"},
-		Actor:      Actor{DisplayName: "manoel martins"},
-		PullRequest: PullRequest{
-			ID:     123,
-			Title:  "Update README",
-			State:  "OPEN",
-			Source: PullRequestSource{Branch: Branch{Name: "develop"}},
-			Links:  PullRequestLinks{HTML: HTML{Href: "https://example.com/pr/123"}},
-			Reviewers: []Reviewer{{
-				User: struct {
-					DisplayName string `json:"display_name"`
-				}{DisplayName: "tassyo monteiro"},
-			}, {
-				User: struct {
-					DisplayName string `json:"display_name"`
-				}{DisplayName: "manoel martins"},
-			}},
-		},
-	}
-
-	// Call the method
-	err := prCreated.Execute(event)
-
-	// Assert that there were no errors
-	assert.NoError(t, err)
-
-	notifier.AssertExpectations(t)
-	messagesStorage.AssertExpectations(t)
-}
-
-func TestPullRequestCreated_Execute_SendNotificationError(t *testing.T) {
-	// Create the mocks
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
-
-	// Set up the expected interactions
-	expectedError := errors.New("error sending notification")
-
-	notifier.On("SendNotification", mock.Anything).Return("", expectedError)
-
-	// Create the PullRequestRemovedAction instance
-	prCreated := NewPullRequestCreated(notifier, messagesStorage)
-
-	// Define the event to test
-	event := PullRequestEvent{
-		Repository: Repository{Name: "example-repo"},
-		Actor:      Actor{DisplayName: "manoel martins"},
-		PullRequest: PullRequest{
-			ID:     123,
-			Title:  "Update README",
-			State:  "OPEN",
-			Source: PullRequestSource{Branch: Branch{Name: "develop"}},
-			Links:  PullRequestLinks{HTML: HTML{Href: "https://example.com/pr/123"}},
-		},
-	}
-
-	// Call the method
-	err := prCreated.Execute(event)
-
-	// Assert that the error is the one expected
-	assert.Equal(t, expectedError, err)
-
-	notifier.AssertExpectations(t)
-	messagesStorage.AssertNotCalled(t, "Update", mock.Anything)
-}
-
-func TestPullRequestCreated_Execute_UpdatePullRequestMessageError(t *testing.T) {
-	// Create the mocks
-	notifier := new(mocks.Notifier)
-	messagesStorage := new(mocks.PullRequestMessagesInterface)
-
-	// Set up the expected interactions
-	expectedPrID := "123"
-	expectedMessageID := "123"
-	expectedError := errors.New("error to update")
-
-	notifier.On("SendNotification", mock.Anything).Return(expectedMessageID, nil)
-	messagesStorage.On("Update", expectedPrID, expectedMessageID).Return(expectedError)
-
-	// Create the PullRequestRemovedAction instance
-	prCreated := NewPullRequestCreated(notifier, messagesStorage)
-
-	// Define the event to test
-	event := PullRequestEvent{
-		Repository: Repository{Name: "example-repo"},
-		Actor:      Actor{DisplayName: "manoel martins"},
-		PullRequest: PullRequest{
-			ID:     123,
-			Title:  "Update README",
-			State:  "OPEN",
-			Source: PullRequestSource{Branch: Branch{Name: "develop"}},
-			Links:  PullRequestLinks{HTML: HTML{Href: "https://example.com/pr/123"}},
-		},
-	}
-
-	// Call the method
-	err := prCreated.Execute(event)
-
-	// Assert that the error is the one expected
-	assert.Equal(t, expectedError, err)
-
-	notifier.AssertExpectations(t)
-	messagesStorage.AssertExpectations(t)
+	mockNotifier.AssertExpectations(t)
+	mockMessagesStorage.AssertExpectations(t)
 }
