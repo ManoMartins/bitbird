@@ -171,10 +171,6 @@ func (p *PullRequestCreated) formatMessage(pr FormatMessageData) string {
 }
 
 func (p *PullRequestCreated) getContent(users []string) string {
-	if len(users) == 0 {
-		return "📰 Um novo Pull Request foi aberto"
-	}
-
 	var usersMention []string
 	for _, user := range users {
 		userMention, ok := DiscordUsers[utils.ToSnakeCase(user)]
