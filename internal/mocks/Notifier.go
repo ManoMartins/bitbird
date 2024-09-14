@@ -5,7 +5,7 @@ package interfaces
 import (
 	context "context"
 
-	interfaces "github.com/manomartins/bitbird/internal/interfaces"
+	interfaces "github.com/manomartins/bitbird/internal/app/interfaces"
 	mock "github.com/stretchr/testify/mock"
 )
 

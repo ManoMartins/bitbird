@@ -3,7 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/manomartins/bitbird/internal/model"
+	"github.com/manomartins/bitbird/internal/app/model"
 	"io/ioutil"
 	"log"
 	"os"

@@ -2,7 +2,7 @@ package events
 
 import (
 	"context"
-	"github.com/manomartins/bitbird/internal/interfaces"
+	"github.com/manomartins/bitbird/internal/app/interfaces"
 	"strconv"
 )
 

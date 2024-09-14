@@ -5,9 +5,9 @@ import (
 	mocks "github.com/manomartins/bitbird/internal/mocks"
 	"testing"
 
-	"github.com/manomartins/bitbird/internal/events"
-	"github.com/manomartins/bitbird/internal/model"
-	"github.com/manomartins/bitbird/internal/utils"
+	"github.com/manomartins/bitbird/internal/app/events"
+	"github.com/manomartins/bitbird/internal/app/model"
+	"github.com/manomartins/bitbird/internal/app/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

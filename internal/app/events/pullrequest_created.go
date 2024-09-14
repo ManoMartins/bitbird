@@ -3,8 +3,8 @@ package events
 import (
 	"context"
 	"fmt"
-	"github.com/manomartins/bitbird/internal/interfaces"
-	"github.com/manomartins/bitbird/internal/utils"
+	"github.com/manomartins/bitbird/internal/app/interfaces"
+	"github.com/manomartins/bitbird/internal/app/utils"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"

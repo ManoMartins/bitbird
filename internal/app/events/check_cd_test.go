@@ -3,9 +3,9 @@ package events_test
 import (
 	"context"
 	"github.com/andygrunwald/go-jira"
-	"github.com/manomartins/bitbird/internal/events"
+	"github.com/manomartins/bitbird/internal/app/events"
+	"github.com/manomartins/bitbird/internal/app/work"
 	interfaces "github.com/manomartins/bitbird/internal/mocks"
-	"github.com/manomartins/bitbird/internal/work"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
