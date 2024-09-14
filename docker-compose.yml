@@ -10,12 +10,20 @@ services:
     ports:
       - "8080:8080"
 
+  mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - "27017:27017"
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
     ports:
-      - 4317:4317 # OTLP gRPC receiver
+      - "4317:4317" # OTLP gRPC receiver
 
   prometheus:
     image: prom/prometheus:latest

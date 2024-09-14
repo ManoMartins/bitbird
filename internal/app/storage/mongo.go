@@ -17,10 +17,11 @@ var MongoClient *mongo.Client
 func ConnectMongoDB() *mongo.Client {
 	mongoUser := os.Getenv("MONGO_USER")
 	mongoPassword := os.Getenv("MONGO_PASS")
+	mongoHost := os.Getenv("MONGO_HOST")
 
 	// Use the SetServerAPIOptions() method to set the version of the Stable API on the client
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(fmt.Sprintf("mongodb+srv://%s:%s@bitbird.hxfijor.mongodb.net/?retryWrites=true&w=majority&appName=bitbird", mongoUser, mongoPassword)).SetServerAPIOptions(serverAPI)
+	opts := options.Client().ApplyURI(fmt.Sprintf("mongodb+srv://%s:%s@%s/?retryWrites=true&w=majority&appName=bitbird", mongoUser, mongoPassword, mongoHost)).SetServerAPIOptions(serverAPI)
 	opts.Monitor = otelmongo.NewMonitor()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

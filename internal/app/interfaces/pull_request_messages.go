@@ -2,7 +2,7 @@ package interfaces
 
 import (
 	"context"
-	"github.com/manomartins/bitbird/internal/model"
+	"github.com/manomartins/bitbird/internal/app/model"
 )
 
 type PullRequestMessagesInterface interface {

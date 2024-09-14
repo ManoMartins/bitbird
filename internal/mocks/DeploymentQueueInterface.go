@@ -3,7 +3,7 @@
 package interfaces
 
 import (
-	model "github.com/manomartins/bitbird/internal/model"
+	model "github.com/manomartins/bitbird/internal/app/model"
 	mock "github.com/stretchr/testify/mock"
 )
 

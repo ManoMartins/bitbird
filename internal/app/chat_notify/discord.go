@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/bwmarrin/discordgo"
 	"github.com/manomartins/bitbird/configs"
-	"github.com/manomartins/bitbird/internal/interfaces"
+	"github.com/manomartins/bitbird/internal/app/interfaces"
 	"os"
 	"time"
 )

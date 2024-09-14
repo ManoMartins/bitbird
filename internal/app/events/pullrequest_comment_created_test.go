@@ -3,8 +3,8 @@ package events
 import (
 	"context"
 	"errors"
+	"github.com/manomartins/bitbird/internal/app/model"
 	"github.com/manomartins/bitbird/internal/mocks"
-	"github.com/manomartins/bitbird/internal/model"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

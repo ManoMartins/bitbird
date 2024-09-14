@@ -2,7 +2,7 @@ package interfaces
 
 import (
 	"github.com/andygrunwald/go-jira"
-	"github.com/manomartins/bitbird/internal/work"
+	"github.com/manomartins/bitbird/internal/app/work"
 )
 
 type IssueService interface {
