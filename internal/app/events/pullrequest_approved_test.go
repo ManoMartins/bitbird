@@ -71,14 +71,14 @@ func TestPullRequestApproved_Execute_SendDirectMessage(t *testing.T) {
 			Links: events.PullRequestLinks{
 				HTML: events.HTML{Href: "http://example.com/pr"},
 			},
-			Actor: events.Actor{
+			Author: events.Actor{
 				DisplayName: "Manoel Martins",
 			},
 		},
 	}
 
 	// Simula o usuário no DiscordUsers
-	events.DiscordUsers[utils.ToSnakeCase(event.PullRequest.Actor.DisplayName)] = "123456789"
+	events.DiscordUsers[utils.ToSnakeCase(event.PullRequest.Author.DisplayName)] = "123456789"
 
 	expectedMessage := "Manoel Martins o pull request **Test PR** foi aprovado! [**Clique aqui para ver o PR**](http://example.com/pr). 🎉"
 
