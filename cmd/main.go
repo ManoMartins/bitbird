@@ -5,7 +5,14 @@ import (
 
 	"github.com/ManoMartins/bitbird/internal/handlers"
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 )
+
+func init() {
+	if envErr := godotenv.Load(); envErr != nil {
+		log.Fatal(".env file missing")
+	}
+}
 
 func main() {
 	app := fiber.New()

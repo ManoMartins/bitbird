@@ -11,8 +11,11 @@
 		"ghcr.io/devcontainers-extra/features/zsh-plugins:0": {
 			"plugins": "git F-Sy-H zsh-autosuggestions zsh-completions",
 			"omzPlugins": "https://github.com/z-shell/F-Sy-H https://github.com/zsh-users/zsh-autosuggestions https://github.com/zsh-users/zsh-completions"
-		}
-	}
+		},
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+	},
+
+	"runArgs": ["--add-host=host.docker.internal:host-gateway"]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
