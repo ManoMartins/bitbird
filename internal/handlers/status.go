@@ -3,25 +3,63 @@ package handlers
 import (
 	"context"
 	"log"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/ManoMartins/bitbird/configs"
 	"github.com/gofiber/fiber/v2"
 )
 
+type Database struct {
+	Version         string `json:"version"`
+	MaxConnections  int    `json:"max_connections"`
+	UsedConnections int    `json:"used_connections"`
+}
+
+type Dependencies struct {
+	Database Database `json:"database"`
+}
+
+type Response struct {
+	UpdatedAt    string       `json:"updated_at"`
+	Dependencies Dependencies `json:"dependencies"`
+}
+
 func Status(c *fiber.Ctx) error {
 	configs.InitDatabase()
 	defer configs.CloseDatabase()
 
-	var sum int
-	err := configs.DB.QueryRow(context.Background(), "SELECT 1 + 1;").Scan(&sum)
-
-	if err != nil {
-		log.Fatalf("Erro ao realizar consulta: %v", err)
+	var databaseVersionValue string
+	if err := configs.DB.QueryRow(context.Background(), "SHOW server_version;").Scan(&databaseVersionValue); err != nil {
+		log.Fatalf("Failed to get database version: %v", err)
 	}
 
-	log.Print(sum)
+	var maxConnections string
+	if err := configs.DB.QueryRow(context.Background(), "SHOW max_connections;").Scan(&maxConnections); err != nil {
+		log.Fatalf("Failed to get database max connections: %v", err)
+	}
 
-	return c.JSON(fiber.Map{
-		"message": "oi",
-	})
+	var usedConnections int
+	if err := configs.DB.QueryRow(context.Background(), "SELECT COUNT(*)::int FROM pg_stat_activity WHERE datname = $1;", os.Getenv("POSTGRES_DB")).Scan(&usedConnections); err != nil {
+		log.Fatalf("Failed to get database used connections: %v", err)
+	}
+
+	maxConnectionsInt, err := strconv.Atoi(maxConnections)
+	if err != nil {
+		log.Fatalf("Failed to convert max connections to int: %v", err)
+	}
+
+	response := Response{
+		UpdatedAt: time.Now().Format(time.RFC3339),
+		Dependencies: Dependencies{
+			Database: Database{
+				Version:         databaseVersionValue,
+				MaxConnections:  maxConnectionsInt,
+				UsedConnections: usedConnections,
+			},
+		},
+	}
+
+	return c.JSON(response)
 }
