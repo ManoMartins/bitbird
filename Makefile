@@ -13,3 +13,10 @@ down:
 
 stop:
 	docker-compose -f $(COMPOSE_FILE) stop
+
+test:
+	go clean -testcache
+	go test ./... -v
+
+watch:
+	reflex -r '\.go$$' -s -- sh -c 'make test'
