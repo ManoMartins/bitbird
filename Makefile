@@ -3,17 +3,26 @@ include .env
 
 COMPOSE_FILE=build/compose.yaml
 
-dev: up
+setup:
+	@echo "Installing CLI dependencies..."
+	go install github.com/cespare/reflex@latest
+	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+	@echo "All CLI tools installed!"
+
+dev: service_up service_wait_database migration_up
 	go run cmd/main.go
 
-up:
+service_up:
 	docker-compose -f $(COMPOSE_FILE) up -d
 
-down:
+service_down:
 	docker-compose -f $(COMPOSE_FILE) down
 
-stop:
+service_stop:
 	docker-compose -f $(COMPOSE_FILE) stop
+
+service_wait_database:
+	go run scripts/wait_for_database.go
 
 test:
 	go clean -testcache
