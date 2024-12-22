@@ -6,17 +6,7 @@ import (
 	"net/http"
 	"testing"
 	"time"
-
-	"github.com/ManoMartins/bitbird/test"
 )
-
-func TestMain(m *testing.M) {
-	if err := test.WaitForAllServices(); err != nil {
-		panic(err)
-	}
-
-	m.Run()
-}
 
 func TestStatusEndpoint(t *testing.T) {
 	// Perform a GET request to the actual server
