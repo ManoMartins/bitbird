@@ -12,7 +12,6 @@ var DB *pgx.Conn
 var err error
 
 func InitDatabase() {
-	log.Print(os.Getenv("DATABASE_URL"))
 	DB, err = pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 
 	if err != nil {
