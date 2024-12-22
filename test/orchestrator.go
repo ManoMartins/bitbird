@@ -1,11 +1,15 @@
 package test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/ManoMartins/bitbird/configs"
+	"github.com/joho/godotenv"
 )
 
 func WaitForAllServices() error {
@@ -40,4 +44,34 @@ func fetchStatusPage() error {
 	}
 
 	return nil
+}
+
+func CleanDatabase() error {
+	if envErr := godotenv.Load("../../.env"); envErr != nil {
+		return errors.New(".env file missing")
+	}
+
+	configs.InitDatabase()
+
+	_, err := configs.DB.Exec(context.Background(), `
+		DROP SCHEMA public CASCADE;
+		CREATE SCHEMA public;
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to reset database: %v", err)
+	}
+
+	configs.CloseDatabase()
+
+	return nil
+}
+
+func Setup() {
+	if err := WaitForAllServices(); err != nil {
+		panic(err)
+	}
+
+	if err := CleanDatabase(); err != nil {
+		panic(err)
+	}
 }
