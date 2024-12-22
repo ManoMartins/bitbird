@@ -25,6 +25,7 @@ func main() {
 
 	api.Get("/status", handlers.Status)
 	api.Get("/migrations", handlers.MigrationsRetrieve)
+	api.Post("/migrations", handlers.MigrationCreate)
 
 	log.Fatal(app.Listen(":8080"))
 }
