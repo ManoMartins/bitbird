@@ -6,9 +6,13 @@ import (
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/ManoMartins/bitbird/test"
 )
 
 func TestStatusEndpoint(t *testing.T) {
+	test.Setup()
+
 	// Perform a GET request to the actual server
 	resp, err := http.Get("http://localhost:8080/api/v1/status")
 	if err != nil {
