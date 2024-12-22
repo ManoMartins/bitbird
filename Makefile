@@ -26,7 +26,7 @@ service_wait_database:
 
 test: service_up service_wait_database
 	go run cmd/main.go & \
-	go clean -testcache && go test ./... -v
+	go test ./... -v
 	make service_down
 
 watch:
