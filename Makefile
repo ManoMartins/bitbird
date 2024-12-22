@@ -24,12 +24,13 @@ service_stop:
 service_wait_database:
 	go run scripts/wait_for_database.go
 
-test:
-	go clean -testcache
-	go test ./... -v
+test: service_up service_wait_database
+	go run cmd/main.go & \
+	go clean -testcache && go test ./... -v
+	make service_down
 
 watch:
-	reflex -r '\.go$$' -s -- sh -c 'make test'
+	reflex -r '\.go$$' -s -- sh -c 'go clean -testcache && go test ./... -v'
 
 migration_create:
 	migrate create -ext sql -dir internal/database/migrations -seq $(name)
