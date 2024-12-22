@@ -1,4 +1,4 @@
--include .env
+include .env
 
 COMPOSE_FILE=build/compose.yaml
 
@@ -26,7 +26,6 @@ service_wait_database:
 test: service_up service_wait_database
 	go run cmd/main.go & \
 	go test ./... -v
-	make service_down
 
 watch:
 	reflex -r '\.go$$' -s -- sh -c 'go clean -testcache && go test ./... -v'
