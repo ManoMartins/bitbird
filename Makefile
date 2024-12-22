@@ -1,5 +1,4 @@
 include .env
-.PHONY: up down stop
 
 COMPOSE_FILE=build/compose.yaml
 
@@ -13,21 +12,20 @@ dev: service_up service_wait_database migration_up
 	go run cmd/main.go
 
 service_up:
-	docker-compose -f $(COMPOSE_FILE) up -d
+	docker compose -f $(COMPOSE_FILE) up -d
 
 service_down:
-	docker-compose -f $(COMPOSE_FILE) down
+	docker compose -f $(COMPOSE_FILE) down
 
 service_stop:
-	docker-compose -f $(COMPOSE_FILE) stop
+	docker compose -f $(COMPOSE_FILE) stop
 
 service_wait_database:
 	go run scripts/wait_for_database.go
 
 test: service_up service_wait_database
 	go run cmd/main.go & \
-	go clean -testcache && go test ./... -v
-	make service_down
+	go test ./... -v
 
 watch:
 	reflex -r '\.go$$' -s -- sh -c 'go clean -testcache && go test ./... -v'
