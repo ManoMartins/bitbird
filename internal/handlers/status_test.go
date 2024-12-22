@@ -10,15 +10,9 @@ import (
 	"github.com/ManoMartins/bitbird/test"
 )
 
-func TestMain(m *testing.M) {
-	if err := test.WaitForAllServices(); err != nil {
-		panic(err)
-	}
-
-	m.Run()
-}
-
 func TestStatusEndpoint(t *testing.T) {
+	test.Setup()
+
 	// Perform a GET request to the actual server
 	resp, err := http.Get("http://localhost:8080/api/v1/status")
 	if err != nil {

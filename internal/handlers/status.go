@@ -27,9 +27,6 @@ type Response struct {
 }
 
 func Status(c *fiber.Ctx) error {
-	configs.InitDatabase()
-	defer configs.CloseDatabase()
-
 	var databaseVersionValue string
 	if err := configs.DB.QueryRow(context.Background(), "SHOW server_version;").Scan(&databaseVersionValue); err != nil {
 		log.Fatalf("Failed to get database version: %v", err)
