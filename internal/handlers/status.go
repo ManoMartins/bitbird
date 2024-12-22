@@ -41,7 +41,10 @@ func Status(c *fiber.Ctx) error {
 	}
 
 	var usedConnections int
-	if err := configs.DB.QueryRow(context.Background(), "SELECT COUNT(*)::int FROM pg_stat_activity WHERE datname = $1;", os.Getenv("POSTGRES_DB")).Scan(&usedConnections); err != nil {
+	const query = "SELECT COUNT(*)::int FROM pg_stat_activity WHERE datname = $1;"
+	err := configs.DB.QueryRow(context.Background(), query, os.Getenv("POSTGRES_DB")).Scan(&usedConnections)
+
+	if err != nil {
 		log.Fatalf("Failed to get database used connections: %v", err)
 	}
 
