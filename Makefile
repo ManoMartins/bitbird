@@ -11,6 +11,9 @@ setup:
 dev: service_up service_wait_database migration_up
 	go run cmd/main.go
 
+dev_ui:
+	cd ui && npm run dev
+
 service_up:
 	docker compose -f $(COMPOSE_FILE) up -d
 
