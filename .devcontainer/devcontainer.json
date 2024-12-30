@@ -12,7 +12,8 @@
 			"plugins": "git F-Sy-H zsh-autosuggestions zsh-completions",
 			"omzPlugins": "https://github.com/z-shell/F-Sy-H https://github.com/zsh-users/zsh-autosuggestions https://github.com/zsh-users/zsh-completions"
 		},
-		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+		"ghcr.io/devcontainers/features/node:1": {}
 	},
 
 	"runArgs": ["--add-host=host.docker.internal:host-gateway"]
